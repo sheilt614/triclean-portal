@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ company.name }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}Janitorial, food service, paper, and facility maintenance supplies for businesses in New York. Order online on account.{% endblock %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 34'%3E%3Cpath d='M18 2 L34 31 H2 Z' fill='%230f2a4a'/%3E%3Cpath d='M18 11 C21 16 23.5 18.5 23.5 21.5 A5.5 5.5 0 0 1 12.5 21.5 C12.5 18.5 15 16 18 11 Z' fill='%234aa8ff'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ url_for('public.home') }}">{% include "_logo.html" %}<span>TriClean<small>Supply</small></span></a>
+    <nav class="nav">
+      {% set ep = request.endpoint or '' %}
+      {% if current_user and current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if ep.startswith('admin.') }}">Backend</a>
+        <a href="{{ url_for('public.home') }}">View site</a>
+      {% elif current_user %}
+        <a href="{{ url_for('portal.catalog') }}" class="{{ 'active' if ep == 'portal.catalog' }}">Order products</a>
+        <a href="{{ url_for('portal.orders') }}" class="{{ 'active' if ep.startswith('portal.order') }}">My orders</a>
+        <a href="{{ url_for('portal.account') }}" class="{{ 'active' if ep == 'portal.account' }}">Account</a>
+        <a href="{{ url_for('portal.cart') }}" class="pill">Cart{% if cart_count %}<span class="badge-count">{{ cart_count }}</span>{% endif %}</a>
+      {% else %}
+        <a href="{{ url_for('public.products') }}" class="{{ 'active' if ep == 'public.products' }}">Products</a>
+        <a href="{{ url_for('public.open_account') }}" class="{{ 'active' if ep == 'public.open_account' }}">Open an account</a>
+        <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+        <a href="{{ url_for('public.login') }}" class="pill">Customer login</a>
+      {% endif %}
+      {% if current_user %}
+        <form method="post" action="{{ url_for('public.logout') }}">{{ csrf_field() }}<button class="linklike" type="submit">Log out</button></form>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+{% block hero %}{% endblock %}
+
+{% block main %}
+<main class="wrap">
+  {% with messages = get_flashed_messages() %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+{% endblock %}
+
+<footer class="site-footer">
+  <div class="wrap row between">
+    <div><strong style="color:#fff;">{{ company.name }}</strong> · {{ company.address }} · <a href="tel:{{ company.phone }}">{{ company.phone }}</a>{% if company.email %} · <a href="mailto:{{ company.email }}">{{ company.email }}</a>{% endif %}</div>
+    <div>&copy; {{ 2026 }} {{ company.name }}</div>
+  </div>
+</footer>
+</body>
+</html>

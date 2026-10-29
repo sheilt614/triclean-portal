@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Log in — {{ company.name }}{% endblock %}
+{% block content %}
+<form method="post" class="card auth-card">
+  {{ csrf_field() }}
+  <h1>Log in</h1>
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" autocomplete="username" required autofocus>
+  <label for="password">Password</label>
+  <input type="password" id="password" name="password" autocomplete="current-password" required>
+  <div class="actions"><button type="submit" style="width:100%;">Log in</button></div>
+  <p class="hint" style="margin-top:14px;">Forgot your password, or don't have a login yet? Call <a href="tel:{{ company.phone }}">{{ company.phone }}</a> and we'll send you a link. New customers can <a href="{{ url_for('public.open_account') }}">open an account</a>.</p>
+</form>
+{% endblock %}

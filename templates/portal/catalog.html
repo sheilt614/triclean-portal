@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Order products — {{ company.name }}{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:12px;">
+  <div>
+    <h1 style="margin:0;">Order products</h1>
+    <p class="muted" style="margin:0;">Prices shown are {{ current_user.customer.name }}'s account pricing.</p>
+  </div>
+  <a class="btn secondary" href="{{ url_for('portal.cart') }}">View order{% if cart_count %} ({{ cart_count }}){% endif %}</a>
+</div>
+<form class="toolbar" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search by name, SKU, or brand">
+  {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+  <button type="submit" class="secondary">Search</button>
+</form>
+<div class="chips">
+  <a class="chip {{ 'active' if not category }}" href="{{ url_for('portal.catalog', q=q or None) }}">All</a>
+  {% for c in categories %}<a class="chip {{ 'active' if c == category }}" href="{{ url_for('portal.catalog', category=c, q=q or None) }}">{{ c }}</a>{% endfor %}
+</div>
+{% if rows %}
+<div class="grid four">
+  {% for r in rows %}{% set p = r.product %}
+  <div class="card tight product-card">
+    <div class="thumb">{% if p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy">{% else %}{{ (p.category or 'TriClean')[:1] }}{% endif %}</div>
+    <div class="sku">{{ p.sku }}{% if p.brand %} · {{ p.brand }}{% endif %}</div>
+    <div class="name">{{ p.name }}</div>
+    {% if p.unit %}<div class="muted small">{{ p.unit }}</div>{% endif %}
+    <div class="row" style="gap:8px;">
+      <span class="price-main">{{ r.tiers[0][1]|money }}</span>
+      {% if r.special %}<span class="tag special">Your price</span>{% endif %}
+    </div>
+    {% with tiers = r.tiers %}{% include "_tiers.html" %}{% endwith %}
+    {% if cart.get(p.id|string) %}<div class="small muted">{{ cart[p.id|string] }} in your order</div>{% endif %}
+    <form method="post" action="{{ url_for('portal.cart_add') }}" class="add-row">
+      {{ csrf_field() }}
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <input type="hidden" name="back" value="{{ request.full_path }}">
+      <input type="number" name="qty" value="1" min="1" class="qty" aria-label="Quantity">
+      <button type="submit" style="flex:1;">Add</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">No products match. <a href="{{ url_for('portal.catalog') }}">See everything</a>.</p>
+{% endif %}
+{% endblock %}

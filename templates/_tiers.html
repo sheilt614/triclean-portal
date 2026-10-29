@@ -1,0 +1,4 @@
+{# Renders a customer's price breaks: tiers = [(min_qty, price), ...] #}
+{% if tiers|length > 1 %}
+<div class="tiers">{% for q, price in tiers %}{% if not loop.first %} · {% endif %}{% if loop.first %}{{ price|money }} each{% else %}<b>{{ q }}+: {{ price|money }}</b>{% endif %}{% endfor %}</div>
+{% endif %}

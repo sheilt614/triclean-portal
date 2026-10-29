@@ -1,0 +1,45 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}{{ order.number }}{% endblock %}
+{% block admin %}
+<p><a href="{{ url_for('admin.orders', status='open') }}">&larr; Orders</a></p>
+<div class="row between">
+  <div><h1 style="margin:0;">{{ order.number }} <span class="tag {{ order.status }}" style="vertical-align:middle;">{{ order.status|capitalize }}</span></h1>
+    <p class="muted" style="margin:0;"><a href="{{ url_for('admin.customer_edit', customer_id=order.customer_id) }}">{{ order.customer.name }}</a> · placed {{ order.created_at|date('%b %d, %Y %I:%M %p') }}{% if order.placed_by %} by {{ order.placed_by.email }}{% endif %}{% if order.po_number %} · PO {{ order.po_number }}{% endif %}</p></div>
+  <a class="btn secondary" href="{{ url_for('admin.invoice', order_id=order.id) }}">{{ 'Invoice' if order.payment_method == 'invoice' else 'Order summary' }}</a>
+</div>
+
+<form method="post">
+  {{ csrf_field() }}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Total</th><th>Ships from</th></tr></thead>
+    <tbody>{% for i in order.items %}{% set have = stock.get(i.id, {}) %}<tr>
+      <td>{{ i.name }}<div class="muted small">{{ i.sku }}{% if i.unit %} · {{ i.unit }}{% endif %}</div></td>
+      <td class="num">{{ i.quantity }}</td><td class="num">{{ i.unit_price|money }}</td><td class="num">{{ i.line_total|money }}</td>
+      <td>{% if open_order %}
+        {% set chosen = i.warehouse_id or suggested.get(i.id) %}
+        <select name="warehouse_{{ i.id }}" aria-label="Warehouse for {{ i.sku }}">
+          <option value="0">Choose warehouse…</option>
+          {% for w in warehouses %}{% set q = have.get(w.id, 0) %}<option value="{{ w.id }}" {{ 'selected' if w.id == chosen }}>{{ w.code }} — {{ q }} on hand{{ ' (not enough)' if q < i.quantity }}</option>{% endfor %}
+        </select>
+        {% else %}{{ i.warehouse.name if i.warehouse else '—' }}{% endif %}</td></tr>{% endfor %}</tbody>
+    <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ order.subtotal|money }}</td><td></td></tr></tfoot>
+  </table></div>
+  {% if open_order %}<p class="hint">Pre-selected: the warehouse with the most stock of each item. Shipping deducts the stock from the warehouses chosen here.</p>{% endif %}
+  <div class="actions">
+    {% if order.status == 'submitted' %}<button type="submit" name="action" value="confirm">Confirm order</button>{% endif %}
+    {% if open_order %}
+      <button type="submit" name="action" value="ship">Mark shipped &amp; deduct stock</button>
+      <button type="submit" name="action" value="save" class="secondary">Save warehouses</button>
+    {% endif %}
+    {% if order.status == 'shipped' %}<button type="submit" name="action" value="deliver">Mark delivered</button>{% endif %}
+    {% if order.payment_method == 'invoice' and order.status != 'cancelled' %}<button type="submit" name="action" value="toggle_paid" class="secondary">{{ 'Mark unpaid' if order.paid else 'Mark paid' }}</button>{% endif %}
+    {% if order.status not in ('cancelled', 'delivered') %}<button type="submit" name="action" value="cancel" class="danger" onclick="return confirm('Cancel {{ order.number }}?{{ ' Its stock will be returned to the warehouses it shipped from.' if order.status == 'shipped' }}');">Cancel order</button>{% endif %}
+  </div>
+</form>
+
+<div class="grid two">
+  <div class="card tight"><strong>Deliver to</strong><div style="white-space:pre-line;">{{ order.shipping_address }}</div></div>
+  <div class="card tight"><strong>Payment</strong><div>{{ 'Invoice, net ' ~ order.customer.net_days if order.payment_method == 'invoice' else 'Card — collect before shipping' }}{% if order.invoice_due %} · due {{ order.invoice_due|date }}{% endif %} · {{ 'Paid' if order.paid else 'Unpaid' }}</div>
+    {% if order.notes %}<strong style="display:block; margin-top:8px;">Customer notes</strong><div style="white-space:pre-line;">{{ order.notes }}</div>{% endif %}</div>
+</div>
+{% endblock %}

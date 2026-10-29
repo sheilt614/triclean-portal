@@ -1,0 +1,16 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Account requests{% endblock %}
+{% block admin %}
+<h1>Account requests</h1>
+<p class="muted">From the "Open an account" form on the website.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Business</th><th>Contact</th><th>Type</th><th>Message</th><th>Received</th><th></th></tr></thead>
+  <tbody>{% for r in requests %}<tr style="{{ 'opacity:0.55' if r.handled }}">
+    <td><strong>{{ r.business_name }}</strong></td>
+    <td>{{ r.contact_name or '' }}<div class="small"><a href="mailto:{{ r.email }}">{{ r.email }}</a>{% if r.phone %} · <a href="tel:{{ r.phone }}">{{ r.phone }}</a>{% endif %}</div></td>
+    <td>{{ r.business_type or '' }}</td><td class="small">{{ r.message or '' }}</td><td class="nowrap">{{ r.created_at|date }}</td>
+    <td class="right nowrap">{% if not r.handled %}<a class="btn small" href="{{ url_for('admin.customer_edit', from_request=r.id) }}">Create customer</a>{% endif %}
+      <form method="post" action="{{ url_for('admin.request_handled', request_id=r.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary">{{ 'Reopen' if r.handled else 'Mark done' }}</button></form></td></tr>
+  {% else %}<tr><td colspan="6" class="muted">No requests yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

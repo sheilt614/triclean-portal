@@ -1,0 +1,18 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Stock history{% endblock %}
+{% block admin %}
+<p><a href="{{ url_for('admin.inventory') }}">&larr; Inventory</a></p>
+<h1>Stock history</h1>
+<div class="table-wrap"><table>
+  <thead><tr><th>When</th><th>Product</th><th>Warehouse</th><th class="num">Change</th><th class="num">After</th><th>Why</th><th>By</th></tr></thead>
+  <tbody>{% for m in movements %}<tr>
+    <td class="nowrap">{{ m.created_at|date('%b %d, %Y %I:%M %p') }}</td>
+    <td><a href="{{ url_for('admin.product_edit', product_id=m.product_id) }}">{{ m.product.name }}</a></td>
+    <td>{{ m.warehouse.name }}</td>
+    <td class="num" style="color:{{ 'var(--ok)' if m.change > 0 else 'var(--bad)' }};">{{ '%+d'|format(m.change) }}</td>
+    <td class="num">{{ m.quantity_after }}</td>
+    <td>{{ m.reason|capitalize }}{% if m.order_id %} <a href="{{ url_for('admin.order_detail', order_id=m.order_id) }}">{{ m.note }}</a>{% elif m.note %} · {{ m.note }}{% endif %}</td>
+    <td class="small muted">{{ m.user.email if m.user else '' }}</td></tr>
+  {% else %}<tr><td colspan="7" class="muted">No stock changes yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

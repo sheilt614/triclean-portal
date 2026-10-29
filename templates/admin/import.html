@@ -1,0 +1,43 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Import / export{% endblock %}
+{% block admin %}
+<h1>Import / export</h1>
+{% if result %}
+<div class="card" style="border-color:{{ 'var(--ok)' if result.ok else 'var(--bad)' }};">
+  {% if result.ok %}
+    <h3 style="color:var(--ok);">Import complete</h3>
+    <p>{{ result.created }} added · {{ result.updated }} updated{% if result.deleted %} · {{ result.deleted }} old special prices removed{% endif %}.</p>
+  {% else %}
+    <h3 style="color:var(--bad);">Nothing was imported — fix these and upload again</h3>
+    <ul>{% for e in result.errors[:50] %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% if result.errors|length > 50 %}<p class="muted">…and {{ result.errors|length - 50 }} more.</p>{% endif %}
+  {% endif %}
+</div>
+{% endif %}
+<p class="muted">Work in Excel or Google Sheets, then save as <strong>CSV</strong> and upload. The easiest start: export the current data, edit it, and upload it back. Uploads update existing rows (matched by SKU) instead of duplicating them, and if any row has a problem, nothing in the file is applied.</p>
+
+<div class="grid three">
+  <form method="post" enctype="multipart/form-data" class="card">
+    {{ csrf_field() }}<input type="hidden" name="kind" value="products">
+    <h3>1. Products</h3>
+    <p class="small muted">Columns: <code>sku, name, base_price</code> (required), <code>category, brand, unit, description, image_url, active</code></p>
+    <input type="file" name="file" accept=".csv" required>
+    <div class="actions"><button type="submit">Import products</button><a class="btn secondary" href="{{ url_for('admin.export', kind='products') }}">Export</a></div>
+  </form>
+  <form method="post" enctype="multipart/form-data" class="card">
+    {{ csrf_field() }}<input type="hidden" name="kind" value="prices">
+    <h3>2. Prices</h3>
+    <p class="small muted">Columns: <code>customer, sku, min_qty, price</code>. Blank customer = standard price list. Blank min_qty = 1. Customer names must match exactly.</p>
+    <input type="file" name="file" accept=".csv" required>
+    <label class="check small"><input type="checkbox" name="replace" value="1"> Replace all special prices for customers in this file</label>
+    <div class="actions"><button type="submit">Import prices</button><a class="btn secondary" href="{{ url_for('admin.export', kind='prices') }}">Export</a></div>
+  </form>
+  <form method="post" enctype="multipart/form-data" class="card">
+    {{ csrf_field() }}<input type="hidden" name="kind" value="inventory">
+    <h3>3. Inventory</h3>
+    <p class="small muted">Columns: <code>warehouse, sku, quantity</code>, optional <code>reorder_point</code>. Warehouse = its code or name. Sets the on-hand count (a stock count).</p>
+    <input type="file" name="file" accept=".csv" required>
+    <div class="actions"><button type="submit">Import inventory</button><a class="btn secondary" href="{{ url_for('admin.export', kind='inventory') }}">Export</a></div>
+  </form>
+</div>
+{% endblock %}

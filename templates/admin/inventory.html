@@ -1,0 +1,22 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Inventory{% endblock %}
+{% block admin %}
+<div class="row between"><h1 style="margin:0;">Inventory</h1>
+  <div class="actions" style="margin:0;"><a class="btn secondary" href="{{ url_for('admin.stock_history') }}">Stock history</a><a class="btn secondary" href="{{ url_for('admin.export', kind='inventory') }}">Export CSV</a></div></div>
+<form class="toolbar" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search product or SKU">
+  <label class="check" style="margin:0;"><input type="checkbox" name="low" value="1" {{ 'checked' if only_low }} onchange="this.form.submit()"> Low stock only</label>
+  <button class="secondary" type="submit">Filter</button>
+</form>
+{% if warehouses %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Product</th>{% for w in warehouses %}<th class="num" title="{{ w.name }}">{{ w.code }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+  <tbody>{% for r in rows %}<tr>
+    <td><a href="{{ url_for('admin.product_edit', product_id=r.product.id) }}#stock">{{ r.product.name }}</a><div class="muted small">{{ r.product.sku }}</div></td>
+    {% for c in r.cells %}<td class="num {{ 'low' if c and c.is_low }}">{{ c.quantity if c else '–' }}</td>{% endfor %}
+    <td class="num"><strong>{{ r.total }}</strong></td></tr>
+  {% else %}<tr><td colspan="{{ warehouses|length + 2 }}" class="muted">Nothing to show.</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="hint">Red = at or below that warehouse's reorder point. Click a product to change its stock. Columns: {% for w in warehouses %}{{ w.code }} = {{ w.name }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% else %}<p class="muted">Add your <a href="{{ url_for('admin.warehouses') }}">warehouses</a> first.</p>{% endif %}
+{% endblock %}

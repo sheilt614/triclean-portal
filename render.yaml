@@ -1,0 +1,22 @@
+# Render Blueprint — New + -> Blueprint, pick this repo. Secrets marked
+# "sync: false" are entered in the Render dashboard, not stored here.
+services:
+  - type: web
+    name: triclean-portal
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --timeout 60
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: COMPANY_PHONE
+        value: "(917) 582-9876"
+      - key: COMPANY_EMAIL
+        sync: false
+      - key: COMPANY_ADDRESS
+        value: "5644 Netherland Ave, Bronx, NY"

@@ -1,0 +1,21 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Orders{% endblock %}
+{% block admin %}
+<h1>Orders</h1>
+<div class="chips">
+  <a class="chip {{ 'active' if status == 'open' }}" href="{{ url_for('admin.orders', status='open') }}">Open</a>
+  <a class="chip {{ 'active' if status == 'unpaid' }}" href="{{ url_for('admin.orders', status='unpaid') }}">Unpaid invoices</a>
+  {% for s in statuses %}<a class="chip {{ 'active' if status == s }}" href="{{ url_for('admin.orders', status=s) }}">{{ s|capitalize }}</a>{% endfor %}
+  <a class="chip {{ 'active' if not status }}" href="{{ url_for('admin.orders') }}">All</a>
+</div>
+<div class="table-wrap"><table>
+  <thead><tr><th>Order</th><th>Customer</th><th>Placed</th><th>Status</th><th>Payment</th><th class="num">Total</th></tr></thead>
+  <tbody>{% for o in orders %}<tr>
+    <td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}"><strong>{{ o.number }}</strong></a>{% if o.po_number %}<div class="muted small">PO {{ o.po_number }}</div>{% endif %}</td>
+    <td>{{ o.customer.name }}</td><td class="nowrap">{{ o.created_at|date }}</td>
+    <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span></td>
+    <td>{{ 'Invoice' if o.payment_method == 'invoice' else 'Card' }}{% if o.paid %} <span class="tag ok">Paid</span>{% elif o.invoice_due and o.status not in ('cancelled',) %} <span class="small muted">due {{ o.invoice_due|date }}</span>{% endif %}</td>
+    <td class="num">{{ o.subtotal|money }}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">No orders here.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

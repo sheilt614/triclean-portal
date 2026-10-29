@@ -1,0 +1,21 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}{{ customer.name }} prices{% endblock %}
+{% block admin %}
+<p><a href="{{ url_for('admin.customer_edit', customer_id=customer.id) }}">&larr; {{ customer.name }}</a></p>
+<h1>{{ customer.name }}'s prices</h1>
+<p class="muted">Type this customer's price for any product and save. Leave it blank to use the standard price{% if customer.discount_pct %} (with their {{ '%g'|format(customer.discount_pct|float) }}% discount){% endif %}. For their own bulk tiers ("10+ for $450"), open the product.</p>
+<form method="post">
+  {{ csrf_field() }}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Product</th><th class="num">Standard{% if customer.discount_pct %} less {{ '%g'|format(customer.discount_pct|float) }}%{% endif %}</th><th class="num">Their price</th><th>What they see</th></tr></thead>
+    <tbody>{% for r in rows %}{% set p = r.product %}<tr>
+      <td><a href="{{ url_for('admin.product_edit', product_id=p.id) }}">{{ p.name }}</a><div class="muted small">{{ p.sku }}{% if p.unit %} · {{ p.unit }}{% endif %}</div></td>
+      <td class="num">{{ r.standard|money }}</td>
+      <td class="num"><input type="text" class="price" name="price_{{ p.id }}" value="{{ '%.2f'|format(r.own_unit.price) if r.own_unit else '' }}" placeholder="—" aria-label="{{ customer.name }} price for {{ p.name }}"></td>
+      <td class="small">{% for q, price in r.tiers %}{% if not loop.first %} · {% endif %}{{ q }}+ {{ price|money }}{% endfor %}
+        {% if r.own_tiers %}<div class="muted">Own tiers: {% for t in r.own_tiers %}{{ t.min_qty }}+ {{ t.price|money }}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="4" class="muted">No active products yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="actions"><button type="submit">Save prices</button></div>
+</form>
+{% endblock %}

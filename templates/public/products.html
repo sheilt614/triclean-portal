@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Products — {{ company.name }}{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:12px;">
+  <h1 style="margin:0;">Products</h1>
+  <a class="btn" href="{{ url_for('public.open_account') }}">Open an account to see your prices</a>
+</div>
+<div class="chips">
+  <a class="chip {{ 'active' if not category }}" href="{{ url_for('public.products') }}">All</a>
+  {% for c in categories %}<a class="chip {{ 'active' if c == category }}" href="{{ url_for('public.products', category=c) }}">{{ c }}</a>{% endfor %}
+</div>
+{% if products %}
+<div class="grid four">
+  {% for p in products %}
+  <div class="card tight product-card">
+    <div class="thumb">{% if p.image_url %}<img src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy">{% else %}{{ (p.category or 'TriClean')[:1] }}{% endif %}</div>
+    <div class="sku">{{ p.sku }}{% if p.brand %} · {{ p.brand }}{% endif %}</div>
+    <div class="name">{{ p.name }}</div>
+    {% if p.unit %}<div class="muted small">{{ p.unit }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">Our catalog is being updated. Call <a href="tel:{{ company.phone }}">{{ company.phone }}</a> for anything you need.</p>
+{% endif %}
+{% endblock %}

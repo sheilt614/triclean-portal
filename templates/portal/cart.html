@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Your order — {{ company.name }}{% endblock %}
+{% block content %}
+<h1>Your order</h1>
+{% if lines %}
+<form method="post">
+  {{ csrf_field() }}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Total</th></tr></thead>
+    <tbody>
+    {% for l in lines %}{% set p = l.product %}
+      <tr>
+        <td><strong>{{ p.name }}</strong><div class="muted small">{{ p.sku }}{% if p.unit %} · {{ p.unit }}{% endif %}</div>
+          {% with tiers = l.tiers %}{% include "_tiers.html" %}{% endwith %}</td>
+        <td class="num"><input type="number" class="qty" name="qty_{{ p.id }}" value="{{ l.qty }}" min="0" aria-label="Quantity"></td>
+        <td class="num">{{ l.unit_price|money }}</td>
+        <td class="num">{{ l.line_total|money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ subtotal|money }}</td></tr></tfoot>
+  </table>
+  </div>
+  <p class="hint">Set a quantity to 0 to remove it. Bulk prices apply automatically when you reach the quantity.</p>
+  <div class="actions">
+    <button type="submit" name="action" value="update" class="secondary">Update quantities</button>
+    <button type="submit" name="action" value="checkout">Continue to checkout</button>
+    <a class="btn secondary" href="{{ url_for('portal.catalog') }}">Keep shopping</a>
+  </div>
+</form>
+{% else %}
+<div class="card"><p>Your order is empty.</p><a class="btn" href="{{ url_for('portal.catalog') }}">Browse products</a></div>
+{% endif %}
+{% endblock %}

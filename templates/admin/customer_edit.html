@@ -1,0 +1,64 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}{{ customer.name or 'New customer' }}{% endblock %}
+{% block admin %}
+<p><a href="{{ url_for('admin.customers') }}">&larr; Customers</a></p>
+<div class="row between"><h1 style="margin:0;">{{ customer.name or 'New customer' }}</h1>
+  {% if customer.id %}<a class="btn" href="{{ url_for('admin.customer_prices', customer_id=customer.id) }}">Set this customer's prices</a>{% endif %}</div>
+<form method="post" class="card">
+  {{ csrf_field() }}
+  {% if from_request %}<input type="hidden" name="from_request" value="{{ from_request }}">{% endif %}
+  <label for="name">Business name *</label><input type="text" id="name" name="name" value="{{ customer.name or '' }}" required>
+  <div class="form-row">
+    <div><label for="contact_name">Contact name</label><input type="text" id="contact_name" name="contact_name" value="{{ customer.contact_name or '' }}"></div>
+    <div><label for="email">Email</label><input type="email" id="email" name="email" value="{{ customer.email or '' }}"></div>
+    <div><label for="phone">Phone</label><input type="tel" id="phone" name="phone" value="{{ customer.phone or '' }}"></div>
+  </div>
+  <div class="form-row">
+    <div><label for="billing_address">Billing address</label><textarea id="billing_address" name="billing_address" rows="3">{{ customer.billing_address or '' }}</textarea></div>
+    <div><label for="shipping_address">Delivery address (default at checkout)</label><textarea id="shipping_address" name="shipping_address" rows="3">{{ customer.shipping_address or '' }}</textarea></div>
+  </div>
+  <div class="form-row">
+    <div><label for="payment_terms">Payment</label><select id="payment_terms" name="payment_terms">
+      <option value="invoice" {{ 'selected' if customer.payment_terms != 'card' }}>Invoice (on account)</option>
+      <option value="card" {{ 'selected' if customer.payment_terms == 'card' }}>Card</option></select></div>
+    <div><label for="net_days">Invoice due after (days)</label><input type="number" id="net_days" name="net_days" value="{{ customer.net_days or 30 }}" min="0"></div>
+    <div><label for="discount_pct">Discount off standard prices (%)</label><input type="text" id="discount_pct" name="discount_pct" value="{{ '%g'|format((customer.discount_pct or 0)|float) }}"></div>
+  </div>
+  <p class="hint">The discount applies to every product this customer doesn't have a specific price for. Use "Set this customer's prices" for product-by-product pricing.</p>
+  <label for="notes">Internal notes</label><textarea id="notes" name="notes" rows="2">{{ customer.notes or '' }}</textarea>
+  <label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if customer.active }}> Active (can log in and order)</label>
+  <button type="submit">Save customer</button>
+</form>
+
+{% if customer.id %}
+<div class="card">
+  <h2>Logins</h2>
+  <p class="muted small">Each person who orders for {{ customer.name }} gets their own login. Creating one gives you a link to send them — they open it and choose their own password.</p>
+  {% if customer.users %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Person</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+    <tbody>{% for u in customer.users %}<tr>
+      <td>{{ u.name or '' }} <span class="muted">{{ u.email }}</span></td>
+      <td>{% if not u.active %}<span class="tag">Deactivated</span>{% elif not u.password_hash %}<span class="tag submitted">Invite sent</span>{% else %}<span class="tag ok">Active</span>{% endif %}</td>
+      <td>{{ u.last_login_at|date if u.last_login_at else 'Never' }}</td>
+      <td class="right nowrap">
+        <form method="post" action="{{ url_for('admin.user_reinvite', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary">{{ 'New invite link' if not u.password_hash else 'Password reset link' }}</button></form>
+        <form method="post" action="{{ url_for('admin.user_toggle', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small {{ 'secondary' if not u.active else 'danger' }}">{{ 'Reactivate' if not u.active else 'Deactivate' }}</button></form>
+      </td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+  <form method="post" action="{{ url_for('admin.customer_user_add', customer_id=customer.id) }}" class="form-row" style="align-items:end; margin-top:12px;">
+    {{ csrf_field() }}
+    <div><label for="u_name">Name</label><input type="text" id="u_name" name="name"></div>
+    <div><label for="u_email">Email *</label><input type="email" id="u_email" name="email" required></div>
+    <div><button type="submit">Create login</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Recent orders</h2>
+  {% if customer.orders %}<ul>{% for o in customer.orders[:10] %}<li><a href="{{ url_for('admin.order_detail', order_id=o.id) }}">{{ o.number }}</a> · {{ o.created_at|date }} · {{ o.subtotal|money }} · <span class="tag {{ o.status }}">{{ o.status }}</span></li>{% endfor %}</ul>
+  {% else %}<p class="muted">No orders yet.</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

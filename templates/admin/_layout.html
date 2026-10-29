@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% block admin_title %}Backend{% endblock %} — {{ company.name }}{% endblock %}
+{% block content %}
+{% set ep = request.endpoint or '' %}
+<div class="admin-shell">
+  <nav class="side-nav">
+    <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if ep == 'admin.dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('admin.orders', status='open') }}" class="{{ 'active' if ep.startswith('admin.order') or ep == 'admin.invoice' }}">Orders</a>
+    <a href="{{ url_for('admin.customers') }}" class="{{ 'active' if ep.startswith('admin.customer') }}">Customers &amp; pricing</a>
+    <a href="{{ url_for('admin.products') }}" class="{{ 'active' if ep.startswith('admin.product') }}">Products</a>
+    <a href="{{ url_for('admin.inventory') }}" class="{{ 'active' if ep in ('admin.inventory', 'admin.stock_history') }}">Inventory</a>
+    <a href="{{ url_for('admin.warehouses') }}" class="{{ 'active' if ep == 'admin.warehouses' }}">Warehouses</a>
+    <div class="sep"></div>
+    <a href="{{ url_for('admin.requests_list') }}" class="{{ 'active' if ep == 'admin.requests_list' }}">Account requests</a>
+    <a href="{{ url_for('admin.import_page') }}" class="{{ 'active' if ep == 'admin.import_page' }}">Import / export</a>
+    <a href="{{ url_for('admin.staff') }}" class="{{ 'active' if ep == 'admin.staff' }}">Staff logins</a>
+  </nav>
+  <div class="stack">{% block admin %}{% endblock %}</div>
+</div>
+{% endblock %}

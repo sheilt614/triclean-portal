@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}My orders — {{ company.name }}{% endblock %}
+{% block content %}
+<h1>My orders</h1>
+{% if orders %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Order</th><th>Placed</th><th>Status</th><th>PO</th><th class="num">Total</th><th></th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+    <tr>
+      <td><a href="{{ url_for('portal.order_detail', order_id=o.id) }}"><strong>{{ o.number }}</strong></a></td>
+      <td>{{ o.created_at|date }}</td>
+      <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span>{% if o.payment_method == 'invoice' and o.status in ('shipped','delivered') %} <span class="tag {{ 'ok' if o.paid else '' }}">{{ 'Paid' if o.paid else 'Invoice open' }}</span>{% endif %}</td>
+      <td>{{ o.po_number or '' }}</td>
+      <td class="num">{{ o.subtotal|money }}</td>
+      <td class="right"><form method="post" action="{{ url_for('portal.reorder', order_id=o.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary" type="submit">Reorder</button></form></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="card"><p>No orders yet.</p><a class="btn" href="{{ url_for('portal.catalog') }}">Place your first order</a></div>
+{% endif %}
+{% endblock %}

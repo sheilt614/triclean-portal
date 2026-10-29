@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} — Janitorial &amp; Facility Supplies, Bronx NY{% endblock %}
+{% block hero %}
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Cleaning and facility supplies, priced for your business.</h1>
+      <p>TriClean Supply keeps bars, restaurants, property managers, and cleaning crews across New York stocked with janitorial, paper, food service, and maintenance supplies. Order online on account, at your own pricing.</p>
+      <div class="actions">
+        <a class="btn big" href="{{ url_for('public.open_account') }}">Open an account</a>
+        <a class="btn big secondary" href="{{ url_for('public.login') }}">Customer login</a>
+      </div>
+    </div>
+    <div class="hero-panel">
+      <h3 style="color:#fff;">Why businesses order from us</h3>
+      <ul>
+        <li>Your own account pricing, with bulk breaks on volume</li>
+        <li>Order online any time, billed on invoice</li>
+        <li>Stock held across our warehouses for fast local delivery</li>
+        <li>A real person to call: <a href="tel:{{ company.phone }}" style="color:#fff;">{{ company.phone }}</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:16px;">
+  <h2>Who we supply</h2>
+  <div class="grid four">
+    <div class="card feature"><div class="icon">B</div><h3>Bars &amp; restaurants</h3><p class="muted">Degreasers, sanitizers, glass and bar-top cleaners, paper goods, and food service disposables.</p></div>
+    <div class="card feature"><div class="icon">P</div><h3>Property managers</h3><p class="muted">Everything for common areas, turnovers, and maintenance, from floor care to plumbing parts.</p></div>
+    <div class="card feature"><div class="icon">J</div><h3>Janitorial companies</h3><p class="muted">Bulk chemicals, liners, and paper at contractor pricing for crews that go through a lot.</p></div>
+    <div class="card feature"><div class="icon">C</div><h3>Schools &amp; child care</h3><p class="muted">Safe, dependable cleaning and paper supplies for classrooms and care centers.</p></div>
+  </div>
+</section>
+{% if categories %}
+<section class="section" style="padding-top:0;">
+  <h2>What we carry</h2>
+  <div class="chips">
+    {% for c in categories %}<a class="chip" href="{{ url_for('public.products', category=c) }}">{{ c }}</a>{% endfor %}
+  </div>
+  <p class="muted">Prices are set per account. <a href="{{ url_for('public.open_account') }}">Open an account</a> to see yours.</p>
+</section>
+{% endif %}
+<section class="section" style="padding-top:0;">
+  <div class="card row between">
+    <div><h2 style="margin-bottom:4px;">Ready to set up an account?</h2><p class="muted" style="margin:0;">Tell us about your business and we'll get back to you with pricing, usually within one business day.</p></div>
+    <a class="btn big" href="{{ url_for('public.open_account') }}">Open an account</a>
+  </div>
+</section>
+{% endblock %}

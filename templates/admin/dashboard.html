@@ -1,0 +1,36 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Dashboard{% endblock %}
+{% block admin %}
+<h1>Dashboard</h1>
+<div class="grid four">
+  <a class="card" href="{{ url_for('admin.orders', status='open') }}"><div class="stat">{{ open_orders|length }}</div><div class="stat-label">Open orders to fill</div></a>
+  <a class="card" href="{{ url_for('admin.inventory', low=1) }}"><div class="stat" style="{{ 'color:var(--bad)' if low_stock }}">{{ low_stock|length }}</div><div class="stat-label">Low-stock items</div></a>
+  <a class="card" href="{{ url_for('admin.orders', status='unpaid') }}"><div class="stat">{{ unpaid_total|money }}</div><div class="stat-label">Unpaid invoices ({{ unpaid|length }})</div></a>
+  <a class="card" href="{{ url_for('admin.requests_list') }}"><div class="stat">{{ requests }}</div><div class="stat-label">New account requests</div></a>
+</div>
+
+<div class="card">
+  <h2>Orders to fill</h2>
+  {% if open_orders %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Order</th><th>Customer</th><th>Placed</th><th>Status</th><th class="num">Total</th></tr></thead>
+    <tbody>{% for o in open_orders %}<tr>
+      <td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}"><strong>{{ o.number }}</strong></a></td>
+      <td>{{ o.customer.name }}</td><td>{{ o.created_at|date('%b %d, %I:%M %p') }}</td>
+      <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span></td><td class="num">{{ o.subtotal|money }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">Nothing waiting.</p>{% endif %}
+</div>
+
+{% if low_stock %}
+<div class="card">
+  <h2>Low stock</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Product</th><th>Warehouse</th><th class="num">On hand</th><th class="num">Reorder at</th></tr></thead>
+    <tbody>{% for i in low_stock %}<tr>
+      <td><a href="{{ url_for('admin.product_edit', product_id=i.product_id) }}#stock">{{ i.product.name }}</a> <span class="muted small">{{ i.product.sku }}</span></td>
+      <td>{{ i.warehouse.name }}</td><td class="num low">{{ i.quantity }}</td><td class="num">{{ i.reorder_point }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

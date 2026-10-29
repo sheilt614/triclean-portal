@@ -1,0 +1,23 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Staff logins{% endblock %}
+{% block admin %}
+<h1>Staff logins</h1>
+<p class="muted">People here can see and change everything in the backend — prices, stock, orders.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Person</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+  <tbody>{% for u in staff %}<tr>
+    <td>{{ u.name or '' }} <span class="muted">{{ u.email }}</span></td>
+    <td>{% if not u.active %}<span class="tag">Deactivated</span>{% elif not u.password_hash %}<span class="tag submitted">Invite sent</span>{% else %}<span class="tag ok">Active</span>{% endif %}</td>
+    <td>{{ u.last_login_at|date if u.last_login_at else 'Never' }}</td>
+    <td class="right nowrap">{% if u.id != current_user.id %}
+      <form method="post" action="{{ url_for('admin.user_reinvite', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary">Reset link</button></form>
+      <form method="post" action="{{ url_for('admin.user_toggle', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small {{ 'secondary' if not u.active else 'danger' }}">{{ 'Reactivate' if not u.active else 'Deactivate' }}</button></form>
+    {% else %}<span class="muted small">you</span>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+<form method="post" class="card form-row" style="align-items:end;">
+  {{ csrf_field() }}
+  <div><label for="name">Name</label><input type="text" id="name" name="name"></div>
+  <div><label for="email">Email *</label><input type="email" id="email" name="email" required></div>
+  <div><button type="submit">Add staff login</button></div>
+</form>
+{% endblock %}

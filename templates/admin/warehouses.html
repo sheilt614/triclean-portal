@@ -1,0 +1,22 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Warehouses{% endblock %}
+{% block admin %}
+<h1>Warehouses</h1>
+{% for w in warehouses %}
+<form method="post" class="card tight form-row" style="align-items:end;">
+  {{ csrf_field() }}<input type="hidden" name="id" value="{{ w.id }}">
+  <div><label>Code</label><input type="text" name="code" value="{{ w.code }}" required></div>
+  <div><label>Name</label><input type="text" name="name" value="{{ w.name }}" required></div>
+  <div><label>Address</label><input type="text" name="address" value="{{ w.address or '' }}"></div>
+  <div><label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if w.active }}> Active</label><button type="submit" class="secondary">Save</button></div>
+</form>
+{% endfor %}
+<form method="post" class="card form-row" style="align-items:end;">
+  {{ csrf_field() }}
+  <div><label for="code">Code *</label><input type="text" id="code" name="code" placeholder="e.g. BX1" required></div>
+  <div><label for="name">Name *</label><input type="text" id="name" name="name" placeholder="e.g. Bronx — Netherland Ave" required></div>
+  <div><label for="address">Address</label><input type="text" id="address" name="address"></div>
+  <div><button type="submit">Add warehouse</button></div>
+</form>
+<p class="hint">The short code is what the inventory spreadsheet uses in its "warehouse" column. An inactive warehouse is hidden from the inventory grid and can't be picked when shipping.</p>
+{% endblock %}

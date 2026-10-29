@@ -1,0 +1,67 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}{{ product.name or 'New product' }}{% endblock %}
+{% block admin %}
+<p><a href="{{ url_for('admin.products') }}">&larr; Products</a></p>
+<h1>{{ product.name or 'New product' }}</h1>
+<form method="post" class="card">
+  {{ csrf_field() }}
+  <div class="form-row">
+    <div><label for="sku">SKU *</label><input type="text" id="sku" name="sku" value="{{ product.sku or '' }}" required></div>
+    <div><label for="base_price">Standard price (each) *</label><input type="text" id="base_price" name="base_price" value="{{ '%.2f'|format(product.base_price or 0) }}" required></div>
+    <div><label for="unit">Sold as</label><input type="text" id="unit" name="unit" value="{{ product.unit or '' }}" placeholder="e.g. case of 4 x 1 gal"></div>
+  </div>
+  <label for="name">Name *</label><input type="text" id="name" name="name" value="{{ product.name or '' }}" required>
+  <div class="form-row">
+    <div><label for="category">Category</label><input type="text" id="category" name="category" value="{{ product.category or '' }}" placeholder="e.g. Paper, Food Service"></div>
+    <div><label for="brand">Brand</label><input type="text" id="brand" name="brand" value="{{ product.brand or '' }}"></div>
+  </div>
+  <label for="description">Description</label><textarea id="description" name="description" rows="2">{{ product.description or '' }}</textarea>
+  <label for="image_url">Image URL</label><input type="text" id="image_url" name="image_url" value="{{ product.image_url or '' }}">
+  <label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if product.active }}> Show to customers</label>
+  <button type="submit">Save product</button>
+</form>
+
+{% if product.id %}
+<div class="card">
+  <h2>Pricing</h2>
+  <p class="muted small">Everyone pays the standard price above unless a bulk tier or their own price is lower. A customer always gets the <strong>lower</strong> of their own price and the standard price for the quantity they order.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Applies to</th><th class="num">From qty</th><th class="num">Price each</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Standard (everyone)</td><td class="num">1</td><td class="num">{{ product.base_price|money }}</td><td class="muted small">set above</td></tr>
+      {% for t in tiers %}<tr><td>Standard bulk tier</td><td class="num">{{ t.min_qty }}+</td><td class="num">{{ t.price|money }}</td>
+        <td class="right"><form method="post" action="{{ url_for('admin.price_delete', price_id=t.id) }}" class="inline">{{ csrf_field() }}<button class="small danger">Remove</button></form></td></tr>{% endfor %}
+      {% for t in customer_prices %}<tr><td><a href="{{ url_for('admin.customer_prices', customer_id=t.customer_id) }}">{{ t.customer.name }}</a></td><td class="num">{{ t.min_qty }}+</td><td class="num">{{ t.price|money }}</td>
+        <td class="right"><form method="post" action="{{ url_for('admin.price_delete', price_id=t.id) }}" class="inline">{{ csrf_field() }}<button class="small danger">Remove</button></form></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <form method="post" action="{{ url_for('admin.product_price_add', product_id=product.id) }}" class="form-row" style="align-items:end; margin-top:12px;">
+    {{ csrf_field() }}
+    <div><label for="pc">Add a price for</label><select id="pc" name="customer_id"><option value="">Everyone (standard bulk tier)</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+    <div><label for="pq">From quantity</label><input type="number" id="pq" name="min_qty" value="10" min="1"></div>
+    <div><label for="pp">Price each</label><input type="text" id="pp" name="price" placeholder="0.00" required></div>
+    <div><button type="submit">Save price</button></div>
+  </form>
+</div>
+
+<div class="card" id="stock">
+  <div class="row between"><h2 style="margin:0;">Stock by warehouse</h2><a class="small" href="{{ url_for('admin.stock_history', product_id=product.id) }}">Stock history</a></div>
+  {% if stock %}
+  <form method="post" action="{{ url_for('admin.stock_adjust', product_id=product.id) }}">
+    {{ csrf_field() }}
+    <div class="table-wrap" style="margin-top:12px;"><table>
+      <thead><tr><th>Warehouse</th><th class="num">On hand</th><th class="num">Reorder at</th></tr></thead>
+      <tbody>{% for w, inv in stock %}<tr>
+        <td>{{ w.name }} <span class="muted small">{{ w.code }}</span>{% if not w.active %} <span class="tag">Inactive</span>{% endif %}{% if inv and inv.is_low %} <span class="tag low">Low</span>{% endif %}</td>
+        <td class="num"><input type="number" class="qty" name="qty_{{ w.id }}" value="{{ inv.quantity if inv else 0 }}" min="0"></td>
+        <td class="num"><input type="number" class="qty" name="reorder_{{ w.id }}" value="{{ inv.reorder_point if inv else 0 }}" min="0"></td></tr>{% endfor %}</tbody>
+      <tfoot><tr><td>Total</td><td class="num">{{ product.total_stock }}</td><td></td></tr></tfoot>
+    </table></div>
+    <label for="note">Reason for change (shown in stock history)</label>
+    <input type="text" id="note" name="note" placeholder="e.g. delivery received, recount, damaged">
+    <div class="actions"><button type="submit">Save stock</button></div>
+  </form>
+  {% else %}<p class="muted">Add a <a href="{{ url_for('admin.warehouses') }}">warehouse</a> first.</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
