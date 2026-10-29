@@ -14,7 +14,10 @@
 <table>
   <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Total</th></tr></thead>
   <tbody>{% for i in order.items %}<tr><td>{{ i.name }}<div class="muted small">{{ i.sku }}{% if i.unit %} · {{ i.unit }}{% endif %}</div></td><td class="num">{{ i.quantity }}</td><td class="num">{{ i.unit_price|money }}</td><td class="num">{{ i.line_total|money }}</td></tr>{% endfor %}</tbody>
-  <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ order.subtotal|money }}</td></tr></tfoot>
+  <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ order.subtotal|money }}</td></tr>
+    {% if order.discount %}<tr><td colspan="3" class="right">Discount</td><td class="num">-{{ order.discount|money }}</td></tr>{% endif %}
+    {% if order.tax %}<tr><td colspan="3" class="right">Tax</td><td class="num">{{ order.tax|money }}</td></tr>{% endif %}
+    {% if order.discount or order.tax %}<tr><td colspan="3" class="right">Total</td><td class="num">{{ order.total|money }}</td></tr>{% endif %}</tfoot>
 </table>
 </div>
 <div class="grid two" style="margin-top:16px;">

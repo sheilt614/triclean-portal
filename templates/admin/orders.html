@@ -15,7 +15,7 @@
     <td>{{ o.customer.name }}</td><td class="nowrap">{{ o.created_at|date }}</td>
     <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span></td>
     <td>{{ 'Invoice' if o.payment_method == 'invoice' else 'Card' }}{% if o.paid %} <span class="tag ok">Paid</span>{% elif o.invoice_due and o.status not in ('cancelled',) %} <span class="small muted">due {{ o.invoice_due|date }}</span>{% endif %}</td>
-    <td class="num">{{ o.subtotal|money }}</td></tr>
+    <td class="num">{{ o.total|money }}</td></tr>
   {% else %}<tr><td colspan="6" class="muted">No orders here.</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endblock %}

@@ -52,8 +52,8 @@ def create_app(config: dict | None = None) -> Flask:
         MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # spreadsheet uploads
         COMPANY_NAME="TriClean Supply",
         COMPANY_PHONE=os.environ.get("COMPANY_PHONE", "(917) 582-9876"),
-        COMPANY_EMAIL=os.environ.get("COMPANY_EMAIL", ""),
-        COMPANY_ADDRESS=os.environ.get("COMPANY_ADDRESS", "5644 Netherland Ave, Bronx, NY"),
+        COMPANY_EMAIL=os.environ.get("COMPANY_EMAIL", "tricleansupplycollc@yahoo.com"),
+        COMPANY_ADDRESS=os.environ.get("COMPANY_ADDRESS", "5644 Netherland Ave, Bronx, NY 10471"),
     )
     if config:
         app.config.update(config)

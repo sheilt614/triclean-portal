@@ -13,7 +13,7 @@
       <td>{{ o.created_at|date }}</td>
       <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span>{% if o.payment_method == 'invoice' and o.status in ('shipped','delivered') %} <span class="tag {{ 'ok' if o.paid else '' }}">{{ 'Paid' if o.paid else 'Invoice open' }}</span>{% endif %}</td>
       <td>{{ o.po_number or '' }}</td>
-      <td class="num">{{ o.subtotal|money }}</td>
+      <td class="num">{{ o.total|money }}</td>
       <td class="right"><form method="post" action="{{ url_for('portal.reorder', order_id=o.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary" type="submit">Reorder</button></form></td>
     </tr>
   {% endfor %}

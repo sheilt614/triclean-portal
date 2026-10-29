@@ -19,4 +19,4 @@ services:
       - key: COMPANY_EMAIL
         sync: false
       - key: COMPANY_ADDRESS
-        value: "5644 Netherland Ave, Bronx, NY"
+        value: "5644 Netherland Ave, Bronx, NY 10471"

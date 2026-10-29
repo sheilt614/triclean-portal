@@ -63,7 +63,7 @@ def main() -> None:
             db.session.add(Price(product_id=p.id, min_qty=10, price=(p.base_price * Decimal("0.92")).quantize(Decimal("0.01"))))
 
         bar = Customer(name="Demo Bar & Grill", contact_name="Sam Demo", email="buyer@barandgrill.test",
-                       shipping_address="100 Demo St\nBronx, NY 10463", billing_address="100 Demo St\nBronx, NY 10463")
+                       shipping_address="100 Demo St\nBronx, NY 10463", billing_address="100 Demo St\nBronx, NY 10463", tax_rate=Decimal("8.875"))
         pm = Customer(name="Demo Property Management", contact_name="Pat Demo", email="buyer@propmgmt.test",
                       shipping_address="200 Sample Ave\nYonkers, NY 10701", discount_pct=Decimal("5"), net_days=45)
         db.session.add_all([bar, pm])

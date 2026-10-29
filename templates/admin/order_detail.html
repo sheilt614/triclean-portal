@@ -22,7 +22,8 @@
           {% for w in warehouses %}{% set q = have.get(w.id, 0) %}<option value="{{ w.id }}" {{ 'selected' if w.id == chosen }}>{{ w.code }} — {{ q }} on hand{{ ' (not enough)' if q < i.quantity }}</option>{% endfor %}
         </select>
         {% else %}{{ i.warehouse.name if i.warehouse else '—' }}{% endif %}</td></tr>{% endfor %}</tbody>
-    <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ order.subtotal|money }}</td><td></td></tr></tfoot>
+    <tfoot><tr><td colspan="3" class="right">Subtotal</td><td class="num">{{ order.subtotal|money }}</td><td></td></tr>
+      {% if order.discount or order.tax %}<tr><td colspan="3" class="right">Total with discount &amp; tax</td><td class="num">{{ order.total|money }}</td><td></td></tr>{% endif %}</tfoot>
   </table></div>
   {% if open_order %}<p class="hint">Pre-selected: the warehouse with the most stock of each item. Shipping deducts the stock from the warehouses chosen here.</p>{% endif %}
   <div class="actions">
@@ -36,6 +37,22 @@
     {% if order.status not in ('cancelled', 'delivered') %}<button type="submit" name="action" value="cancel" class="danger" onclick="return confirm('Cancel {{ order.number }}?{{ ' Its stock will be returned to the warehouses it shipped from.' if order.status == 'shipped' }}');">Cancel order</button>{% endif %}
   </div>
 </form>
+
+{% if order.status != 'cancelled' %}
+<form method="post" class="card">
+  {{ csrf_field() }}<input type="hidden" name="action" value="invoice">
+  <h3>Invoice</h3>
+  <div class="form-row">
+    <div><label for="discount">Discount ($)</label><input type="text" id="discount" name="discount" value="{{ '%.2f'|format(order.discount) }}"></div>
+    <div><label for="tax">Tax ($){% if order.customer.tax_rate %} — {{ '%g'|format(order.customer.tax_rate|float) }}% rate{% endif %}</label><input type="text" id="tax" name="tax" value="{{ '%.2f'|format(order.tax) }}"></div>
+  </div>
+  <label class="check small"><input type="checkbox" name="recalc_tax" value="1"> Recalculate tax from the customer's rate (after the discount)</label>
+  <label for="invoice_message">Message on the invoice</label>
+  <textarea id="invoice_message" name="invoice_message" rows="2" placeholder="Thank you for your business.">{{ order.invoice_message or '' }}</textarea>
+  <p class="small" style="margin-top:10px;">Subtotal {{ order.subtotal|money }} − discount {{ order.discount|money }} + tax {{ order.tax|money }} = <strong>{{ order.total|money }}</strong> · Balance due <strong>{{ order.balance_due|money }}</strong></p>
+  <div class="actions"><button type="submit" class="secondary">Save invoice</button><a class="btn secondary" href="{{ url_for('admin.invoice', order_id=order.id) }}">View / print invoice</a></div>
+</form>
+{% endif %}
 
 <div class="grid two">
   <div class="card tight"><strong>Deliver to</strong><div style="white-space:pre-line;">{{ order.shipping_address }}</div></div>

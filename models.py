@@ -36,6 +36,9 @@ class Customer(db.Model):
     # Applied to the standard price list for any product this customer has
     # no specific price for — "5% off everything" without 50 override rows.
     discount_pct = db.Column(db.Numeric(5, 2), default=0, nullable=False)
+    # Sales tax charged on this customer's orders, e.g. 8.875 for NYC. 0 for
+    # customers who buy for resale or are otherwise exempt.
+    tax_rate = db.Column(db.Numeric(6, 3), default=0, nullable=False)
     notes = db.Column(db.Text)
     active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -179,6 +182,12 @@ class Order(db.Model):
     notes = db.Column(db.Text)
     shipping_address = db.Column(db.Text)
     subtotal = db.Column(Money, nullable=False, default=0)
+    # Invoice adjustments, matching TriClean's invoice template: a discount
+    # off the subtotal and tax (worked out from the customer's tax rate at
+    # order time; staff can override both), plus a message printed on it.
+    discount = db.Column(Money, nullable=False, default=0)
+    tax = db.Column(Money, nullable=False, default=0)
+    invoice_message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     shipped_at = db.Column(db.DateTime)
 
@@ -188,6 +197,22 @@ class Order(db.Model):
     @property
     def number(self) -> str:
         return f"TC-{self.id:05d}"
+
+    @property
+    def total(self) -> Decimal:
+        return (self.subtotal - (self.discount or 0) + (self.tax or 0)).quantize(Decimal("0.01"))
+
+    @property
+    def balance_due(self) -> Decimal:
+        return Decimal("0.00") if self.paid else self.total
+
+    @property
+    def terms_label(self) -> str:
+        return f"Net {self.customer.net_days}" if self.payment_method == "invoice" else "Card"
+
+    def recalculate_tax(self) -> None:
+        rate = Decimal(self.customer.tax_rate or 0)
+        self.tax = ((self.subtotal - (self.discount or 0)) * rate / 100).quantize(Decimal("0.01"))
 
     @property
     def invoice_due(self) -> datetime | None:

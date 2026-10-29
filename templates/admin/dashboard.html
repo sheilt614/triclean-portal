@@ -17,7 +17,7 @@
     <tbody>{% for o in open_orders %}<tr>
       <td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}"><strong>{{ o.number }}</strong></a></td>
       <td>{{ o.customer.name }}</td><td>{{ o.created_at|date('%b %d, %I:%M %p') }}</td>
-      <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span></td><td class="num">{{ o.subtotal|money }}</td></tr>{% endfor %}</tbody>
+      <td><span class="tag {{ o.status }}">{{ o.status|capitalize }}</span></td><td class="num">{{ o.total|money }}</td></tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="muted">Nothing waiting.</p>{% endif %}
 </div>

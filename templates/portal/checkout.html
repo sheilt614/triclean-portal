@@ -20,15 +20,17 @@
         <p class="muted small" style="margin:0;">We'll contact you to take card payment before your order ships.</p>
       {% endif %}
     </div>
-    <div class="actions"><button type="submit" class="big">Place order · {{ subtotal|money }}</button></div>
+    <div class="actions"><button type="submit" class="big">Place order · {{ (subtotal + tax)|money }}</button></div>
   </form>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Total</th></tr></thead>
       <tbody>{% for l in lines %}<tr><td>{{ l.product.name }}<div class="muted small">{{ l.unit_price|money }} each</div></td><td class="num">{{ l.qty }}</td><td class="num">{{ l.line_total|money }}</td></tr>{% endfor %}</tbody>
-      <tfoot><tr><td colspan="2" class="right">Subtotal</td><td class="num">{{ subtotal|money }}</td></tr></tfoot>
+      <tfoot><tr><td colspan="2" class="right">Subtotal</td><td class="num">{{ subtotal|money }}</td></tr>
+        {% if tax %}<tr><td colspan="2" class="right">Sales tax ({{ '%g'|format(customer.tax_rate|float) }}%)</td><td class="num">{{ tax|money }}</td></tr>
+        <tr><td colspan="2" class="right">Total</td><td class="num">{{ (subtotal + tax)|money }}</td></tr>{% endif %}</tfoot>
     </table>
   </div>
 </div>
-<p class="hint">Delivery charges and tax, if any, are added on the invoice. <a href="{{ url_for('portal.cart') }}">Back to your order</a></p>
+<p class="hint">Delivery charges, if any, are added on the invoice. <a href="{{ url_for('portal.cart') }}">Back to your order</a></p>
 {% endblock %}

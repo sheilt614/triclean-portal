@@ -131,6 +131,8 @@ def checkout():
                 notes=request.form.get("notes", "").strip() or None,
                 shipping_address=shipping, subtotal=subtotal,
             )
+            order.customer = customer
+            order.recalculate_tax()
             for line in lines:
                 p = line["product"]
                 order.items.append(OrderItem(
@@ -143,7 +145,8 @@ def checkout():
             flash(f"Order {order.number} placed. TriClean will confirm it shortly.")
             return redirect(url_for("portal.order_detail", order_id=order.id))
 
-    return render_template("portal/checkout.html", lines=lines, subtotal=subtotal, customer=customer)
+    tax = (subtotal * Decimal(customer.tax_rate or 0) / 100).quantize(Decimal("0.01"))
+    return render_template("portal/checkout.html", lines=lines, subtotal=subtotal, tax=tax, customer=customer)
 
 
 @bp.route("/orders")

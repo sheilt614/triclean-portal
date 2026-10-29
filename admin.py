@@ -61,7 +61,7 @@ def dashboard():
                                 Order.status.in_(("shipped", "delivered"))).all()
     return render_template(
         "admin/dashboard.html", open_orders=open_orders, low_stock=low_stock,
-        unpaid=unpaid, unpaid_total=sum((o.subtotal for o in unpaid), Decimal(0)),
+        unpaid=unpaid, unpaid_total=sum((o.total for o in unpaid), Decimal(0)),
         requests=AccountRequest.query.filter_by(handled=False).count(),
         recent=Order.query.order_by(Order.created_at.desc()).limit(10).all(),
     )
@@ -181,17 +181,20 @@ def customer_edit(customer_id=None):
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         discount = _money_or_none(request.form.get("discount_pct") or "0")
+        tax_rate = _money_or_none(request.form.get("tax_rate") or "0")
         net_days = _int_or_none(request.form.get("net_days") or "30")
         if not name:
             flash("Business name is required.")
-        elif discount is None or discount > 100 or net_days is None or net_days < 0:
-            flash("Discount must be 0–100 and net days a whole number.")
+        elif (discount is None or discount > 100 or tax_rate is None or tax_rate > 100
+              or net_days is None or net_days < 0):
+            flash("Discount and tax rate must be 0–100, and net days a whole number.")
         else:
             customer.name = name
             for field in ("contact_name", "email", "phone", "billing_address", "shipping_address", "notes"):
                 setattr(customer, field, request.form.get(field, "").strip() or None)
             customer.payment_terms = "card" if request.form.get("payment_terms") == "card" else "invoice"
             customer.net_days, customer.discount_pct = net_days, discount
+            customer.tax_rate = Decimal(request.form.get("tax_rate") or "0").quantize(Decimal("0.001"))
             customer.active = bool(request.form.get("active"))
             db.session.add(customer)
             if request.form.get("from_request"):
@@ -447,6 +450,19 @@ def order_detail(order_id):
         elif action == "cancel":
             problems = fulfillment.cancel(order, current_user().id)
             flash(" ".join(problems) if problems else f"{order.number} cancelled.")
+        elif action == "invoice":
+            discount = _money_or_none(request.form.get("discount") or "0")
+            tax = _money_or_none(request.form.get("tax") or "0")
+            if discount is None or tax is None or discount > order.subtotal:
+                flash("Discount and tax must be valid amounts, and the discount can't exceed the subtotal.")
+            else:
+                order.discount = discount
+                if request.form.get("recalc_tax"):
+                    order.recalculate_tax()
+                else:
+                    order.tax = tax
+                order.invoice_message = request.form.get("invoice_message", "").strip() or None
+                flash("Invoice updated.")
         elif action == "toggle_paid":
             order.paid = not order.paid
             flash(f"{order.number} marked {'paid' if order.paid else 'unpaid'}.")

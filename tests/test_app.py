@@ -263,3 +263,26 @@ def test_every_admin_page_renders(app, data):
         assert c.get(path).status_code in (200, 302), path
     for path in ["/", "/products", "/open-an-account", "/login"]:
         assert app.test_client().get(path).status_code == 200, path
+
+
+def test_invoice_tax_discount_and_balance(app, data):
+    data["a"].tax_rate = D("8.875")
+    db.session.commit()
+    c = app.test_client()
+    place_order(c, login(c, "a@t.test"), data["soap"].id, 10)  # 10 x $20 = $200
+    order = Order.query.one()
+    assert order.tax == D("17.75") and order.total == D("217.75")
+
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    s.post(f"/admin/orders/{order.id}", data={"action": "invoice", "discount": "20", "tax": "0",
+                                              "recalc_tax": "1", "invoice_message": "Thanks!", "_csrf": token})
+    db.session.expire_all()
+    order = Order.query.one()
+    assert order.discount == D("20.00") and order.tax == D("15.98")  # (200 - 20) * 8.875%
+    assert order.total == D("195.98") and order.balance_due == D("195.98")
+    invoice = s.get(f"/admin/orders/{order.id}/invoice").get_data(as_text=True)
+    assert "$195.98" in invoice and "Thanks!" in invoice and "Net 30" in invoice
+    s.post(f"/admin/orders/{order.id}", data={"action": "toggle_paid", "_csrf": token})
+    db.session.expire_all()
+    assert Order.query.one().balance_due == D("0.00")
