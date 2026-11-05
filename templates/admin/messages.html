@@ -6,7 +6,7 @@
 <div class="table-wrap"><table>
   <thead><tr><th>From</th><th>Message</th><th>Received</th><th></th></tr></thead>
   <tbody>{% for m in messages %}<tr style="{{ 'opacity:0.55' if m.handled }}">
-    <td><strong>{{ m.name }}</strong>{% if m.organization %}<div>{{ m.organization }}</div>{% endif %}
+    <td><strong>{{ m.name }}</strong>{% if m.organization %}<div>{{ m.organization }}</div>{% endif %}{% if m.industry %}<div><span class="tag">{{ m.industry }}</span></div>{% endif %}
       <div class="small"><a href="mailto:{{ m.email }}">{{ m.email }}</a>{% if m.phone %} · <a href="tel:{{ m.phone }}">{{ m.phone }}</a>{% endif %}</div></td>
     <td style="white-space:pre-line; max-width:420px;">{{ m.message }}</td>
     <td class="nowrap">{{ m.created_at|date('%b %d, %I:%M %p') }}</td>

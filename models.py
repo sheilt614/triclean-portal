@@ -252,6 +252,7 @@ class ContactMessage(db.Model):
     organization = db.Column(db.String(255))
     email = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(50))
+    industry = db.Column(db.String(100))
     message = db.Column(db.Text, nullable=False)
     handled = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

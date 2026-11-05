@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app  # noqa: E402
 from models import (  # noqa: E402
-    AccountRequest, Customer, Inventory, Order, Price, Product, StockMovement, User, Warehouse, db,
+    AccountRequest, ContactMessage, Customer, Inventory, Order, Price, Product, StockMovement, User, Warehouse, db,
 )
 from pricing import PriceBook  # noqa: E402
 import imports  # noqa: E402
@@ -300,3 +300,34 @@ def test_contact_message_reaches_backend_and_no_phone_on_public_pages(app, data)
     login(s, "staff@t.test")
     page = s.get("/admin/messages").get_data(as_text=True)
     assert "Need a quote for 12 buildings." in page and "pat@hospital.test" in page
+
+
+def test_industry_dropdown_and_other(app, data):
+    c = app.test_client()
+    page = c.get("/contact").get_data(as_text=True)
+    assert "Hospital / healthcare" in page and 'value="Other"' in page
+    token = csrf(c, "/contact")
+    c.post("/contact", data={"name": "Sam", "email": "s@x.test", "message": "Hi", "business_type": "Other",
+                             "business_type_other": "Stadium", "_csrf": token})
+    c.post("/contact", data={"name": "Ann", "email": "a@x.test", "message": "Hi", "business_type": "Hotel",
+                             "_csrf": token})
+    c.post("/contact", data={"name": "Bob", "email": "b@x.test", "message": "Hi", "business_type": "<script>",
+                             "_csrf": token})
+    assert [m.industry for m in ContactMessage.query.order_by(ContactMessage.id)] == ["Other: Stadium", "Hotel", None]
+    token = csrf(c, "/open-an-account")
+    c.post("/open-an-account", data={"business_name": "Big U", "email": "u@x.test", "business_type": "Other",
+                                     "business_type_other": "Airport", "_csrf": token})
+    assert AccountRequest.query.one().business_type == "Other: Airport"
+
+
+def test_missing_column_added_to_existing_table(tmp_path):
+    import sqlite3
+    path = tmp_path / "old.db"
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE contact_message (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL, "
+                "organization VARCHAR(255), email VARCHAR(255) NOT NULL, phone VARCHAR(50), "
+                "message TEXT NOT NULL, handled BOOLEAN NOT NULL, created_at DATETIME)")
+    con.commit(); con.close()
+    create_app({"SQLALCHEMY_DATABASE_URI": f"sqlite:///{path}"})
+    cols = [r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(contact_message)")]
+    assert "industry" in cols

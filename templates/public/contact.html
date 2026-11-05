@@ -21,6 +21,7 @@
       <div><label for="email">Email *</label><input type="email" id="email" name="email" value="{{ form.email or '' }}" required></div>
       <div><label for="phone">Phone (optional)</label><input type="tel" id="phone" name="phone" value="{{ form.phone or '' }}"></div>
     </div>
+    {% with selected = form.industry, label = 'Industry' %}{% include "_business_type.html" %}{% endwith %}
     <label for="message">Message *</label>
     <textarea id="message" name="message" rows="5" required>{{ form.message or '' }}</textarea>
     <div class="actions"><button type="submit">Send message</button></div>

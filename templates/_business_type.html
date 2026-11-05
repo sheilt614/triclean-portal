@@ -1,0 +1,13 @@
+{# Industry dropdown + "Other" free-text box. Expects business_types and
+   selected (the saved value, e.g. "Hotel" or "Other: Stadium"). #}
+{% set is_other = selected and selected.startswith('Other') %}
+<label for="business_type">{{ label or 'Industry' }}</label>
+<select id="business_type" name="business_type" onchange="var o=document.getElementById('business_type_other_wrap'); o.hidden = this.value !== 'Other'; if (!o.hidden) document.getElementById('business_type_other').focus();">
+  <option value="">Choose…</option>
+  {% for t in business_types %}<option {{ 'selected' if selected == t }}>{{ t }}</option>{% endfor %}
+  <option value="Other" {{ 'selected' if is_other }}>Other</option>
+</select>
+<div id="business_type_other_wrap" {{ '' if is_other else 'hidden' }}>
+  <label for="business_type_other">Your industry</label>
+  <input type="text" id="business_type_other" name="business_type_other" maxlength="80" value="{{ selected[7:] if is_other and selected|length > 7 else '' }}" placeholder="e.g. stadium, airport, warehouse">
+</div>

@@ -11,12 +11,23 @@ from models import AccountRequest, ContactMessage, Product, User, db
 
 bp = Blueprint("public", __name__)
 
+# Same industries the homepage lists, in the same order — used by the
+# Contact us and Open an account forms. "Other" reveals a free-text box.
 BUSINESS_TYPES = (
     "Office park / commercial building", "School / university", "Hospital / healthcare",
     "Nursing home / senior living", "Hotel", "Real estate / property management",
-    "Apartment / residential building", "Janitorial contractor", "Child care",
-    "Bar / restaurant", "Other",
+    "Janitorial contractor", "Child care", "Bar / restaurant",
 )
+
+
+def _business_type_from_form() -> str | None:
+    """The dropdown's value, or "Other: <what they typed>" when they chose
+    Other — so staff see the real industry, not just "Other"."""
+    choice = request.form.get("business_type", "").strip()
+    if choice == "Other":
+        typed = request.form.get("business_type_other", "").strip()[:80]
+        return f"Other: {typed}" if typed else "Other"
+    return choice if choice in BUSINESS_TYPES else None
 
 
 def _categories() -> list[str]:
@@ -45,7 +56,8 @@ def products():
 def open_account():
     if request.method == "POST":
         form = {k: request.form.get(k, "").strip() for k in
-                ("business_name", "contact_name", "email", "phone", "business_type", "message")}
+                ("business_name", "contact_name", "email", "phone", "message")}
+        form["business_type"] = _business_type_from_form()
         if not form["business_name"] or not form["email"] or "@" not in form["email"]:
             flash("Please enter your business name and a valid email.")
             return render_template("public/open_account.html", form=form, business_types=BUSINESS_TYPES)
@@ -59,13 +71,14 @@ def open_account():
 def contact():
     if request.method == "POST":
         form = {k: request.form.get(k, "").strip() for k in ("name", "organization", "email", "phone", "message")}
+        form["industry"] = _business_type_from_form()
         if not form["name"] or "@" not in form["email"] or not form["message"]:
             flash("Please enter your name, a valid email, and a message.")
-            return render_template("public/contact.html", form=form)
+            return render_template("public/contact.html", form=form, business_types=BUSINESS_TYPES)
         db.session.add(ContactMessage(**{k: v or None for k, v in form.items()}))
         db.session.commit()
         return render_template("public/contact_thanks.html", form=form)
-    return render_template("public/contact.html", form={})
+    return render_template("public/contact.html", form={}, business_types=BUSINESS_TYPES)
 
 
 @bp.route("/login", methods=["GET", "POST"])

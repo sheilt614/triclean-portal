@@ -63,6 +63,7 @@ def create_app(config: dict | None = None) -> Flask:
     db.init_app(app)
     with app.app_context():
         db.create_all()
+        _add_missing_columns()
 
     from admin import bp as admin_bp
     from portal import bp as portal_bp
@@ -98,6 +99,25 @@ def _register_template_helpers(app: Flask) -> None:
     @app.context_processor
     def inject_company():
         return {"company": {k[8:].lower(): v for k, v in app.config.items() if k.startswith("COMPANY_")}}
+
+
+# --- Schema patches ------------------------------------------------------------
+# db.create_all() creates missing tables but never adds a column to a table
+# that already exists in the live database. No migration tool (it'd be
+# overkill at this size), so new columns on existing tables go here.
+
+_COLUMN_PATCHES = [
+    ("contact_message", "industry", "VARCHAR(100)"),
+]
+
+
+def _add_missing_columns() -> None:
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    for table, column, ddl_type in _COLUMN_PATCHES:
+        if table in inspector.get_table_names() and column not in {c["name"] for c in inspector.get_columns(table)}:
+            db.session.execute(text(f'ALTER TABLE "{table}" ADD COLUMN {column} {ddl_type}'))
+            db.session.commit()
 
 
 # --- Errors -----------------------------------------------------------------

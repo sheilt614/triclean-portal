@@ -17,11 +17,7 @@
     </div>
     <label for="email">Email *</label>
     <input type="email" id="email" name="email" value="{{ form.email or '' }}" required>
-    <label for="business_type">Type of facility</label>
-    <select id="business_type" name="business_type">
-      <option value="">Choose…</option>
-      {% for t in business_types %}<option {{ 'selected' if form.business_type == t }}>{{ t }}</option>{% endfor %}
-    </select>
+    {% with selected = form.business_type, label = 'Type of facility' %}{% include "_business_type.html" %}{% endwith %}
     <label for="message">Tell us about your facilities (optional)</label>
     <textarea id="message" name="message" rows="3" placeholder="e.g. 3 buildings, about 40 restrooms, what you usually order">{{ form.message or '' }}</textarea>
     <div class="actions"><button type="submit">Send request</button></div>
