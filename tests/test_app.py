@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app  # noqa: E402
 from models import (  # noqa: E402
-    AccountRequest, ContactMessage, Customer, Inventory, Order, Price, Product, StockMovement, User, Warehouse, db,
+    ContactMessage, Customer, Inventory, Order, Price, Product, StockMovement, User, Warehouse, db,
 )
 from pricing import PriceBook  # noqa: E402
 import imports  # noqa: E402
@@ -237,11 +237,45 @@ def test_invite_link_sets_password_once(app, data):
     assert User.query.filter_by(email="new@t.test").one().check_password("longenough1")
 
 
-def test_open_account_request_saved(app, data):
+def test_no_public_signup(app, data):
     c = app.test_client()
-    token = csrf(c, "/open-an-account")
-    c.post("/open-an-account", data={"business_name": "Joe's Bar", "email": "joe@bar.test", "_csrf": token})
-    assert AccountRequest.query.one().business_name == "Joe's Bar"
+    r = c.get("/open-an-account")
+    assert r.status_code == 301 and r.headers["Location"].endswith("/contact")
+    for path in ["/", "/products", "/login", "/contact"]:
+        assert "open-an-account" not in c.get(path).get_data(as_text=True), path
+
+
+def test_admin_creates_customer_and_invites_first_login(app, data):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    r = s.post("/admin/customers/new", data={"name": "Mercy Hospital", "active": "1", "invite_name": "Dana",
+                                             "invite_email": "Dana@Mercy.test", "_csrf": token}, follow_redirects=True)
+    link = re.search(r"/set-password/[\w-]+", r.get_data(as_text=True)).group(0)
+    user = User.query.filter_by(email="dana@mercy.test").one()
+    assert user.customer.name == "Mercy Hospital" and user.role == "customer"
+    c = app.test_client()
+    t = csrf(c, link)
+    assert c.post(link, data={"password": "hospital123", "confirm": "hospital123", "_csrf": t}).headers["Location"].endswith("/portal/")
+    # An email that already has a login is refused and nothing is created.
+    r = s.post("/admin/customers/new", data={"name": "Dup Co", "invite_email": "a@t.test", "_csrf": token})
+    assert "already has a login" in r.get_data(as_text=True) and not Customer.query.filter_by(name="Dup Co").first()
+
+
+def test_create_customer_from_contact_message(app, data):
+    c = app.test_client()
+    token = csrf(c, "/contact")
+    c.post("/contact", data={"name": "Lee Park", "organization": "Park Towers", "email": "lee@parktowers.test",
+                             "message": "Pricing for 4 buildings?", "_csrf": token})
+    msg = ContactMessage.query.one()
+    s = app.test_client()
+    t = login(s, "staff@t.test")
+    form = s.get(f"/admin/customers/new?from_message={msg.id}").get_data(as_text=True)
+    assert 'value="Park Towers"' in form and 'value="lee@parktowers.test"' in form
+    s.post("/admin/customers/new", data={"name": "Park Towers", "active": "1", "from_message": msg.id,
+                                         "invite_email": "lee@parktowers.test", "_csrf": t})
+    db.session.expire_all()
+    assert ContactMessage.query.one().handled
+    assert User.query.filter_by(email="lee@parktowers.test").one().customer.name == "Park Towers"
 
 
 def test_every_admin_page_renders(app, data):
@@ -254,14 +288,14 @@ def test_every_admin_page_renders(app, data):
                  "/admin/customers", f"/admin/customers/{data['a'].id}", "/admin/customers/new",
                  f"/admin/customers/{data['b'].id}/prices", "/admin/warehouses", "/admin/inventory",
                  "/admin/inventory?low=1", "/admin/stock-history", "/admin/orders?status=open",
-                 f"/admin/orders/{order.id}", f"/admin/orders/{order.id}/invoice", "/admin/requests",
+                 f"/admin/orders/{order.id}", f"/admin/orders/{order.id}/invoice",
                  "/admin/import", "/admin/staff", "/admin/messages", "/admin/export/products.csv", "/admin/export/prices.csv",
                  "/admin/export/inventory.csv"]:
         assert s.get(path).status_code == 200, path
     for path in ["/portal/", "/portal/cart", "/portal/checkout", "/portal/orders", f"/portal/orders/{order.id}",
                  "/portal/account"]:
         assert c.get(path).status_code in (200, 302), path
-    for path in ["/", "/products", "/open-an-account", "/login"]:
+    for path in ["/", "/products", "/login", "/contact"]:
         assert app.test_client().get(path).status_code == 200, path
 
 
@@ -290,7 +324,7 @@ def test_invoice_tax_discount_and_balance(app, data):
 
 def test_contact_message_reaches_backend_and_no_phone_on_public_pages(app, data):
     c = app.test_client()
-    for path in ["/", "/products", "/open-an-account", "/login", "/contact"]:
+    for path in ["/", "/products", "/login", "/contact"]:
         assert "582-9876" not in c.get(path).get_data(as_text=True), path
     token = csrf(c, "/contact")
     r = c.post("/contact", data={"name": "Pat Facilities", "email": "pat@hospital.test",
@@ -314,10 +348,6 @@ def test_industry_dropdown_and_other(app, data):
     c.post("/contact", data={"name": "Bob", "email": "b@x.test", "message": "Hi", "business_type": "<script>",
                              "_csrf": token})
     assert [m.industry for m in ContactMessage.query.order_by(ContactMessage.id)] == ["Other: Stadium", "Hotel", None]
-    token = csrf(c, "/open-an-account")
-    c.post("/open-an-account", data={"business_name": "Big U", "email": "u@x.test", "business_type": "Other",
-                                     "business_type_other": "Airport", "_csrf": token})
-    assert AccountRequest.query.one().business_type == "Other: Airport"
 
 
 def test_missing_column_added_to_existing_table(tmp_path):

@@ -256,17 +256,3 @@ class ContactMessage(db.Model):
     message = db.Column(db.Text, nullable=False)
     handled = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class AccountRequest(db.Model):
-    """Submitted from the public "Open an account" form — a lead for staff
-    to follow up on and, if approved, turn into a Customer."""
-    id = db.Column(db.Integer, primary_key=True)
-    business_name = db.Column(db.String(255), nullable=False)
-    contact_name = db.Column(db.String(255))
-    email = db.Column(db.String(255), nullable=False)
-    phone = db.Column(db.String(50))
-    business_type = db.Column(db.String(100))
-    message = db.Column(db.Text)
-    handled = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)

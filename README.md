@@ -2,7 +2,8 @@
 
 A B2B ordering site for TriClean Supply:
 
-- **Public site** — homepage, product catalog (no prices), "Open an account" form.
+- **Public site** — homepage, product catalog (no prices), and a Contact us form.
+  There's no public sign-up: accounts are invite-only, created by staff.
 - **Customer portal** — each customer company has its own logins and sees only
   its own prices, including bulk tiers. Customers order on account (invoice) and
   can see past orders, print invoices, and reorder.
@@ -71,9 +72,14 @@ wake up). For a site customers order from, the $7/month plan avoids that.
 
 ## Logins
 
-There's no self-signup and no automatic email yet. Staff create each login
-(Customer page → Logins) and get a one-time link to send the person, who opens
-it and chooses their own password. "Password reset link" works the same way.
+Accounts are invite-only, and there's no automatic email yet. Staff add a
+customer (Backend → Customers → Add & invite a customer), optionally entering
+the first person's email right there, and get a one-time link to send them.
+They open it and choose their own password. More logins can be added on the
+customer's page; "Password reset link" works the same way.
+
+Messages from the Contact us page land in Backend → Messages. **Create
+customer** on a message pre-fills the account and invite from it.
 
 ## Not built yet
 

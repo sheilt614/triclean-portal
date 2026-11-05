@@ -7,12 +7,12 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from auth import current_user, log_in
-from models import AccountRequest, ContactMessage, Product, User, db
+from models import ContactMessage, Product, User, db
 
 bp = Blueprint("public", __name__)
 
 # Same industries the homepage lists, in the same order — used by the
-# Contact us and Open an account forms. "Other" reveals a free-text box.
+# Contact us form. "Other" reveals a free-text box.
 BUSINESS_TYPES = (
     "Office park / commercial building", "School / university", "Hospital / healthcare",
     "Nursing home / senior living", "Hotel", "Real estate / property management",
@@ -52,19 +52,11 @@ def products():
     )
 
 
-@bp.route("/open-an-account", methods=["GET", "POST"])
+@bp.route("/open-an-account")
 def open_account():
-    if request.method == "POST":
-        form = {k: request.form.get(k, "").strip() for k in
-                ("business_name", "contact_name", "email", "phone", "message")}
-        form["business_type"] = _business_type_from_form()
-        if not form["business_name"] or not form["email"] or "@" not in form["email"]:
-            flash("Please enter your business name and a valid email.")
-            return render_template("public/open_account.html", form=form, business_types=BUSINESS_TYPES)
-        db.session.add(AccountRequest(**{k: v or None for k, v in form.items()}))
-        db.session.commit()
-        return render_template("public/open_account_thanks.html", form=form)
-    return render_template("public/open_account.html", form={}, business_types=BUSINESS_TYPES)
+    # Accounts are invite-only (staff create them in the backend); this old
+    # public form address now just points people to Contact us.
+    return redirect(url_for("public.contact"), code=301)
 
 
 @bp.route("/contact", methods=["GET", "POST"])

@@ -12,7 +12,7 @@ import fulfillment
 import imports
 from auth import admin_required, current_user
 from models import (
-    ORDER_STATUSES, AccountRequest, ContactMessage, Customer, Inventory, Order, Price, Product,
+    ORDER_STATUSES, ContactMessage, Customer, Inventory, Order, Price, Product,
     StockMovement, User, Warehouse, db,
 )
 from pricing import PriceBook
@@ -62,7 +62,6 @@ def dashboard():
     return render_template(
         "admin/dashboard.html", open_orders=open_orders, low_stock=low_stock,
         unpaid=unpaid, unpaid_total=sum((o.total for o in unpaid), Decimal(0)),
-        requests=AccountRequest.query.filter_by(handled=False).count(),
         messages=ContactMessage.query.filter_by(handled=False).count(),
         recent=Order.query.order_by(Order.created_at.desc()).limit(10).all(),
     )
@@ -174,11 +173,12 @@ def customer_edit(customer_id=None):
     customer = db.session.get(Customer, customer_id) if customer_id else Customer(active=True)
     if customer_id and not customer:
         abort(404)
-    if request.method == "GET" and not customer_id and request.args.get("from_request"):
-        req = db.session.get(AccountRequest, int(request.args["from_request"]))
-        if req:
-            customer.name, customer.contact_name = req.business_name, req.contact_name
-            customer.email, customer.phone = req.email, req.phone
+    from_message = _int_or_none(request.values.get("from_message")) if not customer_id else None
+    lead = db.session.get(ContactMessage, from_message) if from_message else None
+    if request.method == "GET" and lead:
+        # Pre-fill from a Contact us message, including inviting the person who wrote in.
+        customer.name = lead.organization or lead.name
+        customer.contact_name, customer.email, customer.phone = lead.name, lead.email, lead.phone
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         discount = _money_or_none(request.form.get("discount_pct") or "0")
@@ -197,16 +197,30 @@ def customer_edit(customer_id=None):
             customer.net_days, customer.discount_pct = net_days, discount
             customer.tax_rate = Decimal(request.form.get("tax_rate") or "0").quantize(Decimal("0.001"))
             customer.active = bool(request.form.get("active"))
+            is_new = customer.id is None
+            invite_email = request.form.get("invite_email", "").strip().lower() if is_new else ""
+            if invite_email and ("@" not in invite_email or User.query.filter_by(email=invite_email).first()):
+                flash(f"Can't invite {invite_email}: " + ("it already has a login." if "@" in invite_email else "not a valid email."))
+                return render_template("admin/customer_edit.html", customer=customer, from_message=from_message,
+                                       invite_email=invite_email, invite_name=request.form.get("invite_name", ""))
             db.session.add(customer)
-            if request.form.get("from_request"):
-                req = db.session.get(AccountRequest, int(request.form["from_request"]))
-                if req:
-                    req.handled = True
+            db.session.flush()
+            invited = None
+            if invite_email:
+                invited = User(email=invite_email, name=request.form.get("invite_name", "").strip() or None,
+                               role="customer", customer_id=customer.id)
+                invited.new_invite()
+                db.session.add(invited)
+            if lead:
+                lead.handled = True
             db.session.commit()
             flash(f"Saved {customer.name}.")
+            if invited:
+                flash(f"Invite ready. Send {invited.email} this link to set their password and log in "
+                      f"(valid 7 days): {_invite_url(invited)}")
             return redirect(url_for("admin.customer_edit", customer_id=customer.id))
-    return render_template("admin/customer_edit.html", customer=customer,
-                           from_request=request.args.get("from_request"))
+    return render_template("admin/customer_edit.html", customer=customer, from_message=from_message,
+                           invite_email=(lead.email if lead else ""), invite_name=(lead.name if lead else ""))
 
 
 @bp.route("/customers/<int:customer_id>/prices", methods=["GET", "POST"])
@@ -488,23 +502,7 @@ def invoice(order_id):
     return render_template("invoice.html", order=db.session.get(Order, order_id) or abort(404))
 
 
-# --- Account requests ----------------------------------------------------------
-
-@bp.route("/requests")
-@admin_required
-def requests_list():
-    return render_template("admin/requests.html",
-                           requests=AccountRequest.query.order_by(AccountRequest.handled, AccountRequest.created_at.desc()).all())
-
-
-@bp.route("/requests/<int:request_id>/handled", methods=["POST"])
-@admin_required
-def request_handled(request_id):
-    req = db.session.get(AccountRequest, request_id) or abort(404)
-    req.handled = not req.handled
-    db.session.commit()
-    return redirect(url_for("admin.requests_list"))
-
+# --- Contact messages (leads) ------------------------------------------------
 
 @bp.route("/messages")
 @admin_required

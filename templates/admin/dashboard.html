@@ -6,7 +6,6 @@
   <a class="card" href="{{ url_for('admin.orders', status='open') }}"><div class="stat">{{ open_orders|length }}</div><div class="stat-label">Open orders to fill</div></a>
   <a class="card" href="{{ url_for('admin.inventory', low=1) }}"><div class="stat" style="{{ 'color:var(--bad)' if low_stock }}">{{ low_stock|length }}</div><div class="stat-label">Low-stock items</div></a>
   <a class="card" href="{{ url_for('admin.orders', status='unpaid') }}"><div class="stat">{{ unpaid_total|money }}</div><div class="stat-label">Unpaid invoices ({{ unpaid|length }})</div></a>
-  <a class="card" href="{{ url_for('admin.requests_list') }}"><div class="stat">{{ requests }}</div><div class="stat-label">New account requests</div></a>
   <a class="card" href="{{ url_for('admin.messages_list') }}"><div class="stat">{{ messages }}</div><div class="stat-label">New contact messages</div></a>
 </div>
 

@@ -1,7 +1,7 @@
 {% extends "admin/_layout.html" %}
 {% block admin_title %}Customers{% endblock %}
 {% block admin %}
-<div class="row between"><h1 style="margin:0;">Customers &amp; pricing</h1><a class="btn" href="{{ url_for('admin.customer_edit') }}">Add customer</a></div>
+<div class="row between"><h1 style="margin:0;">Customers &amp; pricing</h1><a class="btn" href="{{ url_for('admin.customer_edit') }}">Add &amp; invite a customer</a></div>
 <div class="table-wrap"><table>
   <thead><tr><th>Customer</th><th>Contact</th><th>Terms</th><th class="num">Discount</th><th class="num">Logins</th><th class="num">Orders</th><th></th></tr></thead>
   <tbody>{% for c in customers %}<tr>

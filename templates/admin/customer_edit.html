@@ -6,7 +6,7 @@
   {% if customer.id %}<a class="btn" href="{{ url_for('admin.customer_prices', customer_id=customer.id) }}">Set this customer's prices</a>{% endif %}</div>
 <form method="post" class="card">
   {{ csrf_field() }}
-  {% if from_request %}<input type="hidden" name="from_request" value="{{ from_request }}">{% endif %}
+  {% if from_message %}<input type="hidden" name="from_message" value="{{ from_message }}">{% endif %}
   <label for="name">Business name *</label><input type="text" id="name" name="name" value="{{ customer.name or '' }}" required>
   <div class="form-row">
     <div><label for="contact_name">Contact name</label><input type="text" id="contact_name" name="contact_name" value="{{ customer.contact_name or '' }}"></div>
@@ -29,7 +29,17 @@
   <p class="hint">The discount applies to every product this customer doesn't have a specific price for. Use "Set this customer's prices" for product-by-product pricing.</p>
   <label for="notes">Internal notes</label><textarea id="notes" name="notes" rows="2">{{ customer.notes or '' }}</textarea>
   <label class="check"><input type="checkbox" name="active" value="1" {{ 'checked' if customer.active }}> Active (can log in and order)</label>
-  <button type="submit">Save customer</button>
+  {% if not customer.id %}
+  <div class="card tight" style="background:var(--bg); margin:12px 0;">
+    <strong>Invite their first login (optional)</strong>
+    <p class="hint" style="margin-top:2px;">You'll get a link to send them. They open it, choose a password, and land on their own pricing. You can add more logins after saving.</p>
+    <div class="form-row">
+      <div><label for="invite_name">Name</label><input type="text" id="invite_name" name="invite_name" value="{{ invite_name or '' }}"></div>
+      <div><label for="invite_email">Email</label><input type="email" id="invite_email" name="invite_email" value="{{ invite_email or '' }}"></div>
+    </div>
+  </div>
+  {% endif %}
+  <button type="submit">{{ 'Save customer' if customer.id else 'Create customer' }}</button>
 </form>
 
 {% if customer.id %}
