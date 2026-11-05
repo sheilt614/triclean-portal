@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, session, url_for
 
 import fulfillment
 import imports
@@ -47,11 +47,12 @@ def _deliver_invite(user: User, what: str, reset: bool = False) -> None:
     """Emails the set-password link when email is set up; either way, shows
     the link so staff can still send it by hand if the email doesn't arrive."""
     link = _invite_url(user)
-    if mailer.send_invite(user, link, reset=reset):
-        flash(f"{what} Emailed the set-password link to {user.email}. "
-              f"If it doesn't arrive, send them this link yourself (valid 7 days): {link}")
-    else:
-        flash(f"{what} Send {user.email} this link to set their password (valid 7 days): {link}")
+    emailed = mailer.send_invite(user, link, reset=reset)
+    # Shown as a prominent box with a Copy button at the top of the next page
+    # (admin/_layout.html), which the redirect scrolls to via #invite — a
+    # plain flash message was easy to miss when the page kept its scroll.
+    session["last_invite"] = {"what": what, "name": user.name or user.email, "email": user.email,
+                              "link": link, "emailed": emailed}
 
 
 def _csv_response(filename: str, body: str) -> Response:
@@ -229,6 +230,7 @@ def customer_edit(customer_id=None):
             flash(f"Saved {customer.name}.")
             if invited:
                 _deliver_invite(invited, "Invite ready.")
+                return redirect(url_for("admin.customer_edit", customer_id=customer.id) + "#invite")
             return redirect(url_for("admin.customer_edit", customer_id=customer.id))
     return render_template("admin/customer_edit.html", customer=customer, from_message=from_message,
                            invite_email=(lead.email if lead else ""), invite_name=(lead.name if lead else ""))
@@ -297,6 +299,7 @@ def customer_user_add(customer_id):
         db.session.add(user)
         db.session.commit()
         _deliver_invite(user, "Login created.")
+        return redirect(url_for("admin.customer_edit", customer_id=customer.id) + "#invite")
     return redirect(url_for("admin.customer_edit", customer_id=customer.id))
 
 
@@ -308,8 +311,8 @@ def user_reinvite(user_id):
     user.active = True
     db.session.commit()
     _deliver_invite(user, "New set-password link created.", reset=bool(user.password_hash))
-    return redirect(url_for("admin.customer_edit", customer_id=user.customer_id) if user.customer_id
-                    else url_for("admin.staff"))
+    return redirect((url_for("admin.customer_edit", customer_id=user.customer_id) if user.customer_id
+                     else url_for("admin.staff")) + "#invite")
 
 
 @bp.route("/users/<int:user_id>/toggle", methods=["POST"])
@@ -365,6 +368,7 @@ def staff():
             db.session.add(user)
             db.session.commit()
             _deliver_invite(user, "Staff login created.")
+            return redirect(url_for("admin.staff") + "#invite")
         return redirect(url_for("admin.staff"))
     return render_template("admin/staff.html", staff=User.query.filter_by(role="admin").order_by(User.email).all())
 

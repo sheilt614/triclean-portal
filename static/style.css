@@ -197,3 +197,6 @@ td.low { background: var(--bad-soft); color: var(--bad); font-weight: 700; }
 
 details.inline-edit summary { cursor: pointer; color: var(--blue); list-style: none; display: inline-block; margin-top: 2px; }
 details.inline-edit summary::-webkit-details-marker { display: none; }
+
+.invite-box { border: 2px solid var(--ok); background: var(--ok-soft); scroll-margin-top: 16px; }
+.invite-box input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }

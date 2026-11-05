@@ -15,6 +15,19 @@
     <a href="{{ url_for('admin.import_page') }}" class="{{ 'active' if ep == 'admin.import_page' }}">Import / export</a>
     <a href="{{ url_for('admin.staff') }}" class="{{ 'active' if ep == 'admin.staff' }}">Staff logins</a>
   </nav>
-  <div class="stack">{% block admin %}{% endblock %}</div>
+  <div class="stack">
+    {% set invite = session.pop('last_invite', None) %}
+    {% if invite %}
+    <div class="card invite-box" id="invite">
+      <strong>{{ invite.what }} Link for {{ invite.name }}{% if invite.name != invite.email %} ({{ invite.email }}){% endif %}</strong>
+      <p class="small" style="margin:4px 0 8px;">{% if invite.emailed %}It was emailed to them. If it doesn't arrive, copy it and send it yourself.{% else %}Copy this link and send it to <strong>{{ invite.email }}</strong> yourself, by email or text. It works once and expires in 7 days. Don't open it yourself; it would log you in as them.{% endif %}</p>
+      <div class="row" style="gap:8px; flex-wrap:nowrap;">
+        <input type="text" id="invite-link" value="{{ invite.link }}" readonly onclick="this.select()" aria-label="Set-password link for {{ invite.email }}">
+        <button type="button" onclick="var i=document.getElementById('invite-link'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(() => this.textContent='Copied!', () => { document.execCommand('copy'); this.textContent='Copied!'; });">Copy link</button>
+      </div>
+    </div>
+    {% endif %}
+    {% block admin %}{% endblock %}
+  </div>
 </div>
 {% endblock %}

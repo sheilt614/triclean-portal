@@ -425,7 +425,7 @@ def test_invite_is_emailed_and_link_still_shown(app, data, outbox):
     r = s.post("/admin/staff", data={"name": "Darryl H", "email": "dh.triclean@gmail.test", "_csrf": token},
                follow_redirects=True)
     page = r.get_data(as_text=True)
-    assert "Emailed the set-password link to dh.triclean@gmail.test" in page and "/set-password/" in page
+    assert "It was emailed to them" in page and "/set-password/" in page and 'id="invite"' in page
     msg = outbox[-1]
     assert msg["To"] == "dh.triclean@gmail.test" and "staff login" in msg["Subject"]
     body = msg.get_content()
@@ -463,4 +463,20 @@ def test_no_email_configured_still_shows_link(app, data):
     token = login(s, "staff@t.test")
     r = s.post("/admin/staff", data={"email": "x@t2.test", "_csrf": token}, follow_redirects=True)
     page = r.get_data(as_text=True)
-    assert "Send x@t2.test this link" in page and "Emailed" not in page
+    assert "send it to <strong>x@t2.test</strong> yourself" in page and "It was emailed" not in page
+    assert 'id="invite-link"' in page
+
+
+
+def test_reset_link_box_shows_once(app, data):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    s.post("/admin/staff", data={"name": "Joe Twomey", "email": "joe@t.test", "_csrf": token})
+    joe = User.query.filter_by(email="joe@t.test").one()
+    r = s.post(f"/admin/users/{joe.id}/invite", data={"_csrf": token})
+    assert r.headers["Location"].endswith("/admin/staff#invite")
+    page = s.get("/admin/staff").get_data(as_text=True)
+    link = re.search(r'id="invite-link" value="([^"]+)"', page).group(1)
+    db.session.expire_all()
+    assert link.endswith(User.query.filter_by(email="joe@t.test").one().invite_token)
+    assert 'id="invite-link"' not in s.get("/admin/staff").get_data(as_text=True)  # gone after one view
