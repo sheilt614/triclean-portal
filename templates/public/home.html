@@ -1,50 +1,94 @@
 {% extends "base.html" %}
-{% block title %}{{ company.name }} — Janitorial &amp; Facility Supplies, Bronx NY{% endblock %}
+{% block title %}{{ company.name }} — Facility &amp; Janitorial Supplies for High-Traffic Buildings, New York{% endblock %}
+{% block description %}Janitorial, restroom, trash, and building maintenance supplies for office parks, schools and universities, hospitals, nursing homes, hotels, and property managers across New York.{% endblock %}
+{% macro icon(name) -%}
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'office' %}<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2M10 21v-3h4v3"/>
+{%- elif name == 'school' %}<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/><path d="M22 9v6"/>
+{%- elif name == 'hospital' %}<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/>
+{%- elif name == 'senior' %}<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M12 18s-3-1.8-3-3.8a1.7 1.7 0 0 1 3-1 1.7 1.7 0 0 1 3 1c0 2-3 3.8-3 3.8z"/>
+{%- elif name == 'hotel' %}<path d="M3 20V8M21 20v-6a3 3 0 0 0-3-3H10v6"/><path d="M3 17h18"/><circle cx="6.5" cy="12" r="1.5"/>
+{%- elif name == 'property' %}<path d="M3 21V9l6-4 6 4v12"/><path d="M15 12h6v9"/><path d="M7 13h4M7 17h4"/>
+{%- elif name == 'restroom' %}<path d="M7 3v4M5 7h4l-1 7H6z"/><path d="M6 14v7M17 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM14 21l1-9h4l1 9"/>
+{%- elif name == 'trash' %}<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>
+{%- elif name == 'wrench' %}<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>
+{%- elif name == 'floor' %}<path d="M12 3v11"/><path d="M8 14h8l2 7H6z"/>
+{%- elif name == 'truck' %}<path d="M1 6h13v10H1zM14 10h4l3 3v3h-7z"/><circle cx="5" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
+{%- endif %}</svg>
+{%- endmacro %}
+
 {% block hero %}
 <section class="hero">
   <div class="wrap">
     <div>
-      <h1>Cleaning and facility supplies, priced for your business.</h1>
-      <p>TriClean Supply keeps bars, restaurants, property managers, and cleaning crews across New York stocked with janitorial, paper, food service, and maintenance supplies. Order online on account, at your own pricing.</p>
+      <h1>Supplies for buildings that never slow down.</h1>
+      <p>TriClean Supply keeps New York's high-traffic facilities stocked: office parks, schools and universities, hospitals, nursing homes, hotels, and property management portfolios. Restroom, janitorial, trash, and building maintenance supplies, ordered online at your account's pricing and billed on invoice.</p>
       <div class="actions">
-        <a class="btn big" href="{{ url_for('public.open_account') }}">Open an account</a>
+        <a class="btn big" href="{{ url_for('public.open_account') }}">Open a facility account</a>
         <a class="btn big secondary" href="{{ url_for('public.login') }}">Customer login</a>
       </div>
     </div>
     <div class="hero-panel">
-      <h3 style="color:#fff;">Why businesses order from us</h3>
+      <h3 style="color:#fff;">Built for buildings where</h3>
       <ul>
-        <li>Your own account pricing, with bulk breaks on volume</li>
-        <li>Order online any time, billed on invoice</li>
-        <li>Stock held across our warehouses for fast local delivery</li>
-        <li>A real person to call: <a href="tel:{{ company.phone }}" style="color:#fff;">{{ company.phone }}</a></li>
+        <li>Hundreds or thousands of people come through every day</li>
+        <li>Dozens of restrooms have to stay stocked and working</li>
+        <li>Trash volume never lets up</li>
+        <li>Doors, lighting, and plumbing take constant wear</li>
       </ul>
+      <p style="margin:12px 0 0; color:#cfe2f6;">Call <a href="tel:{{ company.phone }}" style="color:#fff; font-weight:600;">{{ company.phone }}</a> to talk to a person.</p>
     </div>
   </div>
 </section>
 {% endblock %}
+
 {% block content %}
 <section class="section" style="padding-top:16px;">
-  <h2>Who we supply</h2>
-  <div class="grid four">
-    <div class="card feature"><div class="icon">B</div><h3>Bars &amp; restaurants</h3><p class="muted">Degreasers, sanitizers, glass and bar-top cleaners, paper goods, and food service disposables.</p></div>
-    <div class="card feature"><div class="icon">P</div><h3>Property managers</h3><p class="muted">Everything for common areas, turnovers, and maintenance, from floor care to plumbing parts.</p></div>
-    <div class="card feature"><div class="icon">J</div><h3>Janitorial companies</h3><p class="muted">Bulk chemicals, liners, and paper at contractor pricing for crews that go through a lot.</p></div>
-    <div class="card feature"><div class="icon">C</div><h3>Schools &amp; child care</h3><p class="muted">Safe, dependable cleaning and paper supplies for classrooms and care centers.</p></div>
+  <h2>Facilities we supply</h2>
+  <div class="grid three">
+    <div class="card feature"><div class="icon">{{ icon('office') }}</div><h3>Office parks &amp; commercial buildings</h3><p class="muted">Multi-tenant restrooms, lobbies, and loading docks, stocked across every floor.</p></div>
+    <div class="card feature"><div class="icon">{{ icon('school') }}</div><h3>Schools &amp; universities</h3><p class="muted">Classrooms, dorms, dining halls, and athletic facilities with thousands of people a day.</p></div>
+    <div class="card feature"><div class="icon">{{ icon('hospital') }}</div><h3>Hospitals &amp; healthcare</h3><p class="muted">Around-the-clock restroom, trash, and cleaning supply needs that can't run out.</p></div>
+    <div class="card feature"><div class="icon">{{ icon('senior') }}</div><h3>Nursing homes &amp; senior living</h3><p class="muted">Dependable resupply of paper, liners, and cleaning chemicals for resident and staff areas.</p></div>
+    <div class="card feature"><div class="icon">{{ icon('hotel') }}</div><h3>Hotels</h3><p class="muted">Guest rooms, public restrooms, and back-of-house, from housekeeping chemicals to paper.</p></div>
+    <div class="card feature"><div class="icon">{{ icon('property') }}</div><h3>Real estate &amp; property management</h3><p class="muted">Apartment buildings, common areas, turnovers, and maintenance across a whole portfolio.</p></div>
+  </div>
+  <p class="muted" style="margin-top:16px;">We also supply janitorial contractors, child care centers, and bars and restaurants.</p>
+</section>
+
+<section class="section" style="padding-top:0;">
+  <div class="card">
+    <h2>What high-traffic buildings go through</h2>
+    <div class="grid four">
+      <div class="feature"><div class="icon">{{ icon('restroom') }}</div><h3>Restrooms</h3><p class="muted">Toilet tissue, towels, soap, and the flush valves and parts that keep heavy-use restrooms working.</p></div>
+      <div class="feature"><div class="icon">{{ icon('trash') }}</div><h3>Trash &amp; liners</h3><p class="muted">Can liners and bags in the sizes and volumes busy buildings actually use.</p></div>
+      <div class="feature"><div class="icon">{{ icon('floor') }}</div><h3>Floors &amp; cleaning</h3><p class="muted">Cleaning chemicals, disinfectants, and floor care including buffing pads.</p></div>
+      <div class="feature"><div class="icon">{{ icon('wrench') }}</div><h3>Building maintenance</h3><p class="muted">Plumbing, electrical, ceiling tiles, and other building products for the repairs that never stop.</p></div>
+    </div>
   </div>
 </section>
+
+<section class="section">
+  <h2>Ordering built for facilities teams</h2>
+  <div class="grid three">
+    <div class="card feature"><h3>Your account's pricing</h3><p class="muted">Every account gets its own pricing, with bulk breaks on volume. Log in to see your prices, never list prices.</p></div>
+    <div class="card feature"><h3>Logins for your whole team</h3><p class="muted">Facility managers, supervisors, and purchasing can each have a login on the same account, and reorder past orders in one click.</p></div>
+    <div class="card feature"><h3>Billed on invoice</h3><p class="muted">Order online any time and pay on terms, with your PO number on every invoice.</p></div>
+  </div>
+</section>
+
 {% if categories %}
 <section class="section" style="padding-top:0;">
   <h2>What we carry</h2>
   <div class="chips">
     {% for c in categories %}<a class="chip" href="{{ url_for('public.products', category=c) }}">{{ c }}</a>{% endfor %}
   </div>
-  <p class="muted">Prices are set per account. <a href="{{ url_for('public.open_account') }}">Open an account</a> to see yours.</p>
 </section>
 {% endif %}
+
 <section class="section" style="padding-top:0;">
   <div class="card row between">
-    <div><h2 style="margin-bottom:4px;">Ready to set up an account?</h2><p class="muted" style="margin:0;">Tell us about your business and we'll get back to you with pricing, usually within one business day.</p></div>
+    <div><h2 style="margin-bottom:4px;">Set up a facility account</h2><p class="muted" style="margin:0;">Tell us about your building or portfolio and we'll get back to you with pricing, usually within one business day.</p></div>
     <a class="btn big" href="{{ url_for('public.open_account') }}">Open an account</a>
   </div>
 </section>

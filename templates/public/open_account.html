@@ -4,12 +4,12 @@
 <div class="grid two">
   <div>
     <h1>Open an account</h1>
-    <p>Accounts get their own pricing, bulk discounts on volume, online ordering, and invoicing on terms.</p>
+    <p>Facility accounts get their own pricing, bulk discounts on volume, logins for the whole team, online ordering, and invoicing on terms.</p>
     <p class="muted">Fill this out and we'll be in touch, usually within one business day. Or call <a href="tel:{{ company.phone }}">{{ company.phone }}</a>.</p>
   </div>
   <form method="post" class="card">
     {{ csrf_field() }}
-    <label for="business_name">Business name *</label>
+    <label for="business_name">Organization or business name *</label>
     <input type="text" id="business_name" name="business_name" value="{{ form.business_name or '' }}" required>
     <div class="form-row">
       <div><label for="contact_name">Your name</label><input type="text" id="contact_name" name="contact_name" value="{{ form.contact_name or '' }}"></div>
@@ -17,13 +17,13 @@
     </div>
     <label for="email">Email *</label>
     <input type="email" id="email" name="email" value="{{ form.email or '' }}" required>
-    <label for="business_type">Type of business</label>
+    <label for="business_type">Type of facility</label>
     <select id="business_type" name="business_type">
       <option value="">Choose…</option>
       {% for t in business_types %}<option {{ 'selected' if form.business_type == t }}>{{ t }}</option>{% endfor %}
     </select>
-    <label for="message">What do you usually order? (optional)</label>
-    <textarea id="message" name="message" rows="3">{{ form.message or '' }}</textarea>
+    <label for="message">Tell us about your facilities (optional)</label>
+    <textarea id="message" name="message" rows="3" placeholder="e.g. 3 buildings, about 40 restrooms, what you usually order">{{ form.message or '' }}</textarea>
     <div class="actions"><button type="submit">Send request</button></div>
   </form>
 </div>

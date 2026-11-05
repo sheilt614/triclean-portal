@@ -12,9 +12,10 @@ from models import AccountRequest, Product, User, db
 bp = Blueprint("public", __name__)
 
 BUSINESS_TYPES = (
-    "Bar / restaurant", "Property management", "Apartment / residential building",
-    "Commercial / office building", "Janitorial company", "School / child care",
-    "Hotel", "Other",
+    "Office park / commercial building", "School / university", "Hospital / healthcare",
+    "Nursing home / senior living", "Hotel", "Real estate / property management",
+    "Apartment / residential building", "Janitorial contractor", "Child care",
+    "Bar / restaurant", "Other",
 )
 
 
