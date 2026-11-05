@@ -244,6 +244,19 @@ class OrderItem(db.Model):
         return (self.unit_price * self.quantity).quantize(Decimal("0.01"))
 
 
+class ContactMessage(db.Model):
+    """Sent from the public "Contact us" page. There's no outgoing email yet,
+    so these wait in the backend's Messages list for staff to answer."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    organization = db.Column(db.String(255))
+    email = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(50))
+    message = db.Column(db.Text, nullable=False)
+    handled = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class AccountRequest(db.Model):
     """Submitted from the public "Open an account" form — a lead for staff
     to follow up on and, if approved, turn into a Customer."""

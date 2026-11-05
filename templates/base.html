@@ -23,11 +23,12 @@
         <a href="{{ url_for('portal.catalog') }}" class="{{ 'active' if ep == 'portal.catalog' }}">Order products</a>
         <a href="{{ url_for('portal.orders') }}" class="{{ 'active' if ep.startswith('portal.order') }}">My orders</a>
         <a href="{{ url_for('portal.account') }}" class="{{ 'active' if ep == 'portal.account' }}">Account</a>
+        <a href="{{ url_for('public.contact') }}" class="{{ 'active' if ep == 'public.contact' }}">Contact us</a>
         <a href="{{ url_for('portal.cart') }}" class="pill">Cart{% if cart_count %}<span class="badge-count">{{ cart_count }}</span>{% endif %}</a>
       {% else %}
         <a href="{{ url_for('public.products') }}" class="{{ 'active' if ep == 'public.products' }}">Products</a>
         <a href="{{ url_for('public.open_account') }}" class="{{ 'active' if ep == 'public.open_account' }}">Open an account</a>
-        <a href="tel:{{ company.phone }}">{{ company.phone }}</a>
+        <a href="{{ url_for('public.contact') }}" class="{{ 'active' if ep == 'public.contact' }}">Contact us</a>
         <a href="{{ url_for('public.login') }}" class="pill">Customer login</a>
       {% endif %}
       {% if current_user %}
@@ -48,7 +49,7 @@
 
 <footer class="site-footer">
   <div class="wrap row between">
-    <div><strong style="color:#fff;">{{ company.name }}</strong> · {{ company.address }} · <a href="tel:{{ company.phone }}">{{ company.phone }}</a>{% if company.email %} · <a href="mailto:{{ company.email }}">{{ company.email }}</a>{% endif %}</div>
+    <div><strong style="color:#fff;">{{ company.name }}</strong> · {{ company.address }} · <a href="{{ url_for('public.contact') }}">Contact us</a></div>
     <div>&copy; {{ 2026 }} {{ company.name }}</div>
   </div>
 </footer>

@@ -11,6 +11,7 @@
     <a href="{{ url_for('admin.inventory') }}" class="{{ 'active' if ep in ('admin.inventory', 'admin.stock_history') }}">Inventory</a>
     <a href="{{ url_for('admin.warehouses') }}" class="{{ 'active' if ep == 'admin.warehouses' }}">Warehouses</a>
     <div class="sep"></div>
+    <a href="{{ url_for('admin.messages_list') }}" class="{{ 'active' if ep == 'admin.messages_list' }}">Messages</a>
     <a href="{{ url_for('admin.requests_list') }}" class="{{ 'active' if ep == 'admin.requests_list' }}">Account requests</a>
     <a href="{{ url_for('admin.import_page') }}" class="{{ 'active' if ep == 'admin.import_page' }}">Import / export</a>
     <a href="{{ url_for('admin.staff') }}" class="{{ 'active' if ep == 'admin.staff' }}">Staff logins</a>

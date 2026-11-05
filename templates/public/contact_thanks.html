@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Message sent — {{ company.name }}{% endblock %}
+{% block content %}
+<div class="card auth-card" style="max-width:560px;">
+  <h1>Thanks, {{ form.name.split(' ')[0] }}.</h1>
+  <p>We got your message and will reply to {{ form.email }}, usually within one business day.</p>
+  <a class="btn secondary" href="{{ url_for('public.home') }}">Back to home</a>
+</div>
+{% endblock %}

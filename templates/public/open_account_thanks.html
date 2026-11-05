@@ -4,7 +4,6 @@
 <div class="card auth-card" style="max-width:560px;">
   <h1>Thanks, we got it.</h1>
   <p>We'll reach out to {{ form.email }} about an account for {{ form.business_name }}, usually within one business day.</p>
-  <p class="muted">Need something sooner? Call <a href="tel:{{ company.phone }}">{{ company.phone }}</a>.</p>
   <a class="btn secondary" href="{{ url_for('public.home') }}">Back to home</a>
 </div>
 {% endblock %}

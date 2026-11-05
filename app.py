@@ -110,7 +110,7 @@ def _register_errors(app: Flask) -> None:
         403: ("Not allowed", "Your login doesn't have access to that page."),
         404: ("Page not found", "That page doesn't exist, or you don't have access to it."),
         413: ("File too large", "Uploads are limited to 5 MB."),
-        500: ("Something went wrong", "Please try again. If it keeps happening, call us."),
+        500: ("Something went wrong", "Please try again. If it keeps happening, let us know through the Contact us page."),
     }
     for code, (title, message) in pages.items():
         def handler(e, code=code, title=title, message=message):

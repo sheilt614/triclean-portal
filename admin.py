@@ -12,8 +12,8 @@ import fulfillment
 import imports
 from auth import admin_required, current_user
 from models import (
-    ORDER_STATUSES, AccountRequest, Customer, Inventory, Order, Price, Product, StockMovement,
-    User, Warehouse, db,
+    ORDER_STATUSES, AccountRequest, ContactMessage, Customer, Inventory, Order, Price, Product,
+    StockMovement, User, Warehouse, db,
 )
 from pricing import PriceBook
 
@@ -63,6 +63,7 @@ def dashboard():
         "admin/dashboard.html", open_orders=open_orders, low_stock=low_stock,
         unpaid=unpaid, unpaid_total=sum((o.total for o in unpaid), Decimal(0)),
         requests=AccountRequest.query.filter_by(handled=False).count(),
+        messages=ContactMessage.query.filter_by(handled=False).count(),
         recent=Order.query.order_by(Order.created_at.desc()).limit(10).all(),
     )
 
@@ -503,6 +504,22 @@ def request_handled(request_id):
     req.handled = not req.handled
     db.session.commit()
     return redirect(url_for("admin.requests_list"))
+
+
+@bp.route("/messages")
+@admin_required
+def messages_list():
+    return render_template("admin/messages.html",
+                           messages=ContactMessage.query.order_by(ContactMessage.handled, ContactMessage.created_at.desc()).all())
+
+
+@bp.route("/messages/<int:message_id>/handled", methods=["POST"])
+@admin_required
+def message_handled(message_id):
+    msg = db.session.get(ContactMessage, message_id) or abort(404)
+    msg.handled = not msg.handled
+    db.session.commit()
+    return redirect(url_for("admin.messages_list"))
 
 
 # --- Spreadsheet import / export ------------------------------------------------

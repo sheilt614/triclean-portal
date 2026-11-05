@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from auth import current_user, log_in
-from models import AccountRequest, Product, User, db
+from models import AccountRequest, ContactMessage, Product, User, db
 
 bp = Blueprint("public", __name__)
 
@@ -53,6 +53,19 @@ def open_account():
         db.session.commit()
         return render_template("public/open_account_thanks.html", form=form)
     return render_template("public/open_account.html", form={}, business_types=BUSINESS_TYPES)
+
+
+@bp.route("/contact", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        form = {k: request.form.get(k, "").strip() for k in ("name", "organization", "email", "phone", "message")}
+        if not form["name"] or "@" not in form["email"] or not form["message"]:
+            flash("Please enter your name, a valid email, and a message.")
+            return render_template("public/contact.html", form=form)
+        db.session.add(ContactMessage(**{k: v or None for k, v in form.items()}))
+        db.session.commit()
+        return render_template("public/contact_thanks.html", form=form)
+    return render_template("public/contact.html", form={})
 
 
 @bp.route("/login", methods=["GET", "POST"])

@@ -255,7 +255,7 @@ def test_every_admin_page_renders(app, data):
                  f"/admin/customers/{data['b'].id}/prices", "/admin/warehouses", "/admin/inventory",
                  "/admin/inventory?low=1", "/admin/stock-history", "/admin/orders?status=open",
                  f"/admin/orders/{order.id}", f"/admin/orders/{order.id}/invoice", "/admin/requests",
-                 "/admin/import", "/admin/staff", "/admin/export/products.csv", "/admin/export/prices.csv",
+                 "/admin/import", "/admin/staff", "/admin/messages", "/admin/export/products.csv", "/admin/export/prices.csv",
                  "/admin/export/inventory.csv"]:
         assert s.get(path).status_code == 200, path
     for path in ["/portal/", "/portal/cart", "/portal/checkout", "/portal/orders", f"/portal/orders/{order.id}",
@@ -286,3 +286,17 @@ def test_invoice_tax_discount_and_balance(app, data):
     s.post(f"/admin/orders/{order.id}", data={"action": "toggle_paid", "_csrf": token})
     db.session.expire_all()
     assert Order.query.one().balance_due == D("0.00")
+
+
+def test_contact_message_reaches_backend_and_no_phone_on_public_pages(app, data):
+    c = app.test_client()
+    for path in ["/", "/products", "/open-an-account", "/login", "/contact"]:
+        assert "582-9876" not in c.get(path).get_data(as_text=True), path
+    token = csrf(c, "/contact")
+    r = c.post("/contact", data={"name": "Pat Facilities", "email": "pat@hospital.test",
+                                 "message": "Need a quote for 12 buildings.", "_csrf": token})
+    assert "Thanks, Pat." in r.get_data(as_text=True)
+    s = app.test_client()
+    login(s, "staff@t.test")
+    page = s.get("/admin/messages").get_data(as_text=True)
+    assert "Need a quote for 12 buildings." in page and "pat@hospital.test" in page

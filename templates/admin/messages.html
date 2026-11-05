@@ -1,0 +1,16 @@
+{% extends "admin/_layout.html" %}
+{% block admin_title %}Messages{% endblock %}
+{% block admin %}
+<h1>Messages</h1>
+<p class="muted">From the "Contact us" page on the website. Reply by email or phone, then mark it done.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>From</th><th>Message</th><th>Received</th><th></th></tr></thead>
+  <tbody>{% for m in messages %}<tr style="{{ 'opacity:0.55' if m.handled }}">
+    <td><strong>{{ m.name }}</strong>{% if m.organization %}<div>{{ m.organization }}</div>{% endif %}
+      <div class="small"><a href="mailto:{{ m.email }}">{{ m.email }}</a>{% if m.phone %} · <a href="tel:{{ m.phone }}">{{ m.phone }}</a>{% endif %}</div></td>
+    <td style="white-space:pre-line; max-width:420px;">{{ m.message }}</td>
+    <td class="nowrap">{{ m.created_at|date('%b %d, %I:%M %p') }}</td>
+    <td class="right"><form method="post" action="{{ url_for('admin.message_handled', message_id=m.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary">{{ 'Reopen' if m.handled else 'Mark done' }}</button></form></td></tr>
+  {% else %}<tr><td colspan="4" class="muted">No messages yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}
