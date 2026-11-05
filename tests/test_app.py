@@ -381,3 +381,86 @@ def test_staff_email_change_keeps_password(app, data):
     r = c.post("/login", data={"email": "darryl@tricleansupply.test", "password": "darrylpass1", "_csrf": t})
     assert r.headers["Location"].endswith("/admin/")
     assert "Netherland" not in app.test_client().get("/").get_data(as_text=True)
+
+
+def test_initial_admins_from_environment(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("INITIAL_ADMINS", "Owner@X.test:Owner Name, joe@tricleansupply.test:Joe Twomey, bad-entry")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://example.test")
+    uri = f"sqlite:///{tmp_path / 'boot.db'}"
+    app = create_app({"SQLALCHEMY_DATABASE_URI": uri})
+    out = capsys.readouterr().out
+    assert out.count("https://example.test/set-password/") == 2
+    with app.app_context():
+        joe = User.query.filter_by(email="joe@tricleansupply.test").one()
+        assert joe.role == "admin" and joe.name == "Joe Twomey"
+        token = joe.invite_token
+    create_app({"SQLALCHEMY_DATABASE_URI": uri})  # restart: existing logins untouched
+    assert "set-password" not in capsys.readouterr().out
+    with app.app_context():
+        assert User.query.filter_by(email="joe@tricleansupply.test").one().invite_token == token
+
+
+@pytest.fixture()
+def outbox(monkeypatch):
+    """Turns email on and captures messages instead of sending them."""
+    import mailer
+    sent = []
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.test")
+    monkeypatch.setenv("MAIL_FROM", "TriClean Supply <triclean@sheilmarketing.test>")
+    monkeypatch.setattr(mailer, "_deliver", lambda msg: sent.append(msg) or True)
+
+    class Now:  # run "background" sends immediately so tests can see them
+        def __init__(self, target, args, daemon=None):
+            self.target, self.args = target, args
+
+        def start(self):
+            self.target(*self.args)
+    monkeypatch.setattr(mailer.threading, "Thread", Now)
+    return sent
+
+
+def test_invite_is_emailed_and_link_still_shown(app, data, outbox):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    r = s.post("/admin/staff", data={"name": "Darryl H", "email": "dh.triclean@gmail.test", "_csrf": token},
+               follow_redirects=True)
+    page = r.get_data(as_text=True)
+    assert "Emailed the set-password link to dh.triclean@gmail.test" in page and "/set-password/" in page
+    msg = outbox[-1]
+    assert msg["To"] == "dh.triclean@gmail.test" and "staff login" in msg["Subject"]
+    body = msg.get_content()
+    assert "Hi Darryl," in body and re.search(r"http://localhost/set-password/[\w-]+", body)
+
+
+def test_order_emails_staff_and_customer_and_shipping(app, data, outbox):
+    c = app.test_client()
+    place_order(c, login(c, "a@t.test"), data["soap"].id, 3)
+    order = Order.query.one()
+    subjects = {m["Subject"]: m for m in outbox}
+    staff = next(m for s_, m in subjects.items() if s_.startswith("New order"))
+    assert staff["To"] == "staff@t.test" and staff["Reply-To"] == "a@t.test" and "$60.00" in staff.get_content()
+    confirm = subjects[f"Order {order.number} received"]
+    assert confirm["To"] == "a@t.test"
+    s = app.test_client()
+    t = login(s, "staff@t.test")
+    item = order.items[0]
+    s.post(f"/admin/orders/{order.id}", data={"action": "ship", f"warehouse_{item.id}": data["wh1"].id, "_csrf": t})
+    assert outbox[-1]["Subject"] == f"Order {order.number} has shipped" and outbox[-1]["To"] == "a@t.test"
+
+
+def test_contact_message_emails_staff_with_reply_to_sender(app, data, outbox):
+    c = app.test_client()
+    token = csrf(c, "/contact")
+    c.post("/contact", data={"name": "Pat", "organization": "Mercy Hospital", "email": "pat@mercy.test",
+                             "message": "Quote please", "business_type": "Hospital / healthcare", "_csrf": token})
+    msg = outbox[-1]
+    assert msg["Reply-To"] == "pat@mercy.test" and "Mercy Hospital" in msg["Subject"]
+    assert "Industry: Hospital / healthcare" in msg.get_content()
+
+
+def test_no_email_configured_still_shows_link(app, data):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    r = s.post("/admin/staff", data={"email": "x@t2.test", "_csrf": token}, follow_redirects=True)
+    page = r.get_data(as_text=True)
+    assert "Send x@t2.test this link" in page and "Emailed" not in page

@@ -14,9 +14,27 @@ services:
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
+      # Optional: "email:Name, email:Name" — creates staff logins on startup and
+      # prints their set-password links to the Logs tab. See app.py.
+      - key: INITIAL_ADMINS
+        sync: false
       - key: COMPANY_PHONE
         value: "(917) 582-9876"
       - key: COMPANY_EMAIL
         sync: false
       - key: COMPANY_ADDRESS
         value: "5644 Netherland Ave, Bronx, NY 10471"
+      # Outgoing email (optional) — see mailer.py. Without these, nothing is
+      # emailed and staff send invite links by hand.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: NOTIFY_EMAILS
+        sync: false

@@ -7,6 +7,7 @@ from decimal import Decimal
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from auth import current_user, customer_required
+import mailer
 from models import Order, OrderItem, Product, db
 from pricing import PriceBook
 
@@ -142,7 +143,10 @@ def checkout():
             db.session.add(order)
             db.session.commit()
             _save_cart({})
-            flash(f"Order {order.number} placed. TriClean will confirm it shortly.")
+            mailer.notify_new_order(order)
+            emailed = mailer.send_order_confirmation(order)
+            flash(f"Order {order.number} placed. TriClean will confirm it shortly."
+                  + (f" A confirmation is on its way to {user.email}." if emailed else ""))
             return redirect(url_for("portal.order_detail", order_id=order.id))
 
     tax = (subtotal * Decimal(customer.tax_rate or 0) / 100).quantize(Decimal("0.01"))

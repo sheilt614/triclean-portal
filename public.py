@@ -6,6 +6,7 @@ from datetime import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
+import mailer
 from auth import current_user, log_in
 from models import ContactMessage, Product, User, db
 
@@ -67,8 +68,10 @@ def contact():
         if not form["name"] or "@" not in form["email"] or not form["message"]:
             flash("Please enter your name, a valid email, and a message.")
             return render_template("public/contact.html", form=form, business_types=BUSINESS_TYPES)
-        db.session.add(ContactMessage(**{k: v or None for k, v in form.items()}))
+        message = ContactMessage(**{k: v or None for k, v in form.items()})
+        db.session.add(message)
         db.session.commit()
+        mailer.notify_contact_message(message)
         return render_template("public/contact_thanks.html", form=form)
     return render_template("public/contact.html", form={}, business_types=BUSINESS_TYPES)
 

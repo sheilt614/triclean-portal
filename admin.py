@@ -10,6 +10,7 @@ from flask import Blueprint, Response, abort, flash, redirect, render_template, 
 
 import fulfillment
 import imports
+import mailer
 from auth import admin_required, current_user
 from models import (
     ORDER_STATUSES, ContactMessage, Customer, Inventory, Order, Price, Product,
@@ -40,6 +41,17 @@ def _int_or_none(value: str | None) -> int | None:
 
 def _invite_url(user: User) -> str:
     return url_for("public.set_password", token=user.invite_token, _external=True)
+
+
+def _deliver_invite(user: User, what: str, reset: bool = False) -> None:
+    """Emails the set-password link when email is set up; either way, shows
+    the link so staff can still send it by hand if the email doesn't arrive."""
+    link = _invite_url(user)
+    if mailer.send_invite(user, link, reset=reset):
+        flash(f"{what} Emailed the set-password link to {user.email}. "
+              f"If it doesn't arrive, send them this link yourself (valid 7 days): {link}")
+    else:
+        flash(f"{what} Send {user.email} this link to set their password (valid 7 days): {link}")
 
 
 def _csv_response(filename: str, body: str) -> Response:
@@ -216,8 +228,7 @@ def customer_edit(customer_id=None):
             db.session.commit()
             flash(f"Saved {customer.name}.")
             if invited:
-                flash(f"Invite ready. Send {invited.email} this link to set their password and log in "
-                      f"(valid 7 days): {_invite_url(invited)}")
+                _deliver_invite(invited, "Invite ready.")
             return redirect(url_for("admin.customer_edit", customer_id=customer.id))
     return render_template("admin/customer_edit.html", customer=customer, from_message=from_message,
                            invite_email=(lead.email if lead else ""), invite_name=(lead.name if lead else ""))
@@ -285,7 +296,7 @@ def customer_user_add(customer_id):
         user.new_invite()
         db.session.add(user)
         db.session.commit()
-        flash(f"Login created. Send {email} this link to set their password (valid 7 days): {_invite_url(user)}")
+        _deliver_invite(user, "Login created.")
     return redirect(url_for("admin.customer_edit", customer_id=customer.id))
 
 
@@ -296,7 +307,7 @@ def user_reinvite(user_id):
     user.new_invite()
     user.active = True
     db.session.commit()
-    flash(f"New set-password link for {user.email} (valid 7 days): {_invite_url(user)}")
+    _deliver_invite(user, "New set-password link created.", reset=bool(user.password_hash))
     return redirect(url_for("admin.customer_edit", customer_id=user.customer_id) if user.customer_id
                     else url_for("admin.staff"))
 
@@ -353,7 +364,7 @@ def staff():
             user.new_invite()
             db.session.add(user)
             db.session.commit()
-            flash(f"Staff login created. Send {email} this link to set their password (valid 7 days): {_invite_url(user)}")
+            _deliver_invite(user, "Staff login created.")
         return redirect(url_for("admin.staff"))
     return render_template("admin/staff.html", staff=User.query.filter_by(role="admin").order_by(User.email).all())
 
@@ -483,6 +494,7 @@ def order_detail(order_id):
                 flash("Couldn't ship: " + " ".join(problems))
                 return redirect(url_for("admin.order_detail", order_id=order.id))
             flash(f"{order.number} shipped — stock deducted.")
+            mailer.send_shipped_notice(order)
         elif action == "deliver" and order.status == "shipped":
             order.status = "delivered"
             flash(f"{order.number} marked delivered.")

@@ -19,6 +19,7 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import auth
+import mailer
 
 from models import User, db
 
@@ -64,6 +65,7 @@ def create_app(config: dict | None = None) -> Flask:
     with app.app_context():
         db.create_all()
         _add_missing_columns()
+        _create_initial_admins(app)
 
     from admin import bp as admin_bp
     from portal import bp as portal_bp
@@ -120,6 +122,39 @@ def _add_missing_columns() -> None:
             db.session.commit()
 
 
+# --- First staff logins from the Render dashboard ---------------------------
+# Render's free plan has no shell to run `flask create-admin`, so staff
+# logins can also be requested with an environment variable:
+#     INITIAL_ADMINS = you@example.com:Your Name, joe@tricleansupply.com:Joe Twomey
+# On startup, any of those emails that doesn't have a login yet gets a staff
+# login, and its one-time set-password link is printed to the service logs
+# (Render dashboard -> Logs). Emails that already have a login are skipped,
+# so leaving the variable set never resets anyone's password.
+
+def _create_initial_admins(app: Flask) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    raw = os.environ.get("INITIAL_ADMINS", "")
+    base = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+    for entry in (e.strip() for e in raw.split(",")):
+        if not entry:
+            continue
+        email, _, name = entry.partition(":")
+        email = email.strip().lower()
+        if "@" not in email or User.query.filter_by(email=email).first():
+            continue
+        user = User(email=email, name=name.strip() or None, role="admin")
+        token = user.new_invite()
+        db.session.add(user)
+        try:
+            db.session.commit()
+        except IntegrityError:  # another server process created it first
+            db.session.rollback()
+            continue
+        print(f"[INITIAL_ADMINS] Staff login created for {email}. Set the password here "
+              f"(valid 7 days): {base}/set-password/{token}", flush=True)
+
+
 # --- Errors -----------------------------------------------------------------
 
 def _register_errors(app: Flask) -> None:
@@ -159,3 +194,8 @@ def _register_cli(app: Flask) -> None:
         db.session.commit()
         base = os.environ.get("PUBLIC_BASE_URL", "http://localhost:5000").rstrip("/")
         click.echo(f"Admin {email} ready. Set the password here (valid 7 days):\n{base}/set-password/{token}")
+        if mailer.configured():
+            # url_for needs a request context to build external links; reuse PUBLIC_BASE_URL.
+            with app.test_request_context(base_url=base):
+                sent = mailer.send_invite(user, f"{base}/set-password/{token}")
+            click.echo(f"Also emailed it to {email}." if sent else "Emailing it failed — send the link yourself.")
