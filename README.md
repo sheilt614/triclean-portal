@@ -86,5 +86,5 @@ customer** on a message pre-fills the account and invite from it.
 - Card payments (Stripe) — orders from card customers are recorded, and staff
   collect payment manually for now.
 - Automatic emails (order confirmations, invites, low-stock alerts).
-- Tax and delivery charges on invoices.
+- Delivery charges on invoices (tax and discounts are built).
 - QuickBooks sync.
