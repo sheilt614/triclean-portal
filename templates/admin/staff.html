@@ -2,11 +2,15 @@
 {% block admin_title %}Staff logins{% endblock %}
 {% block admin %}
 <h1>Staff logins</h1>
-<p class="muted">People here can see and change everything in the backend — prices, stock, orders.</p>
+<p class="muted">People here can see and change everything in the backend — prices, stock, orders. Adding someone gives you a one-time link to send them; they open it and choose their own password. "Change email" moves a login to a new address (e.g. a business email) and keeps their password.</p>
 <div class="table-wrap"><table>
   <thead><tr><th>Person</th><th>Status</th><th>Last login</th><th></th></tr></thead>
   <tbody>{% for u in staff %}<tr>
-    <td>{{ u.name or '' }} <span class="muted">{{ u.email }}</span></td>
+    <td>{{ u.name or '' }} <span class="muted">{{ u.email }}</span>
+      <details class="inline-edit"><summary class="small">Change email</summary>
+        <form method="post" action="{{ url_for('admin.user_change_email', user_id=u.id) }}" class="row" style="gap:6px; margin-top:6px;">{{ csrf_field() }}
+          <input type="email" name="email" value="{{ u.email }}" required aria-label="New email for {{ u.name or u.email }}" style="max-width:240px;">
+          <button class="small secondary" type="submit">Save</button></form></details></td>
     <td>{% if not u.active %}<span class="tag">Deactivated</span>{% elif not u.password_hash %}<span class="tag submitted">Invite sent</span>{% else %}<span class="tag ok">Active</span>{% endif %}</td>
     <td>{{ u.last_login_at|date if u.last_login_at else 'Never' }}</td>
     <td class="right nowrap">{% if u.id != current_user.id %}

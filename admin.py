@@ -315,6 +315,30 @@ def user_toggle(user_id):
                     else url_for("admin.staff"))
 
 
+@bp.route("/users/<int:user_id>/email", methods=["POST"])
+@admin_required
+def user_change_email(user_id):
+    """Moves a login to a new email address (e.g. from a personal address to
+    a business one) — same account, password, and history; they log in with
+    the new address from now on."""
+    user = db.session.get(User, user_id) or abort(404)
+    email = request.form.get("email", "").strip().lower()
+    back = (url_for("admin.customer_edit", customer_id=user.customer_id) if user.customer_id
+            else url_for("admin.staff"))
+    if not email or "@" not in email:
+        flash("Enter a valid email.")
+    elif email == user.email:
+        flash("That's already their email.")
+    elif User.query.filter_by(email=email).first():
+        flash(f"{email} already has a login.")
+    else:
+        old = user.email
+        user.email = email
+        db.session.commit()
+        flash(f"Changed {old} to {email}. They log in with {email} from now on, with the same password.")
+    return redirect(back)
+
+
 @bp.route("/staff", methods=["GET", "POST"])
 @admin_required
 def staff():

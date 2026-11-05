@@ -361,3 +361,23 @@ def test_missing_column_added_to_existing_table(tmp_path):
     create_app({"SQLALCHEMY_DATABASE_URI": f"sqlite:///{path}"})
     cols = [r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(contact_message)")]
     assert "industry" in cols
+
+
+def test_staff_email_change_keeps_password(app, data):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    s.post("/admin/staff", data={"name": "Darryl", "email": "darryl@gmail.test", "_csrf": token})
+    darryl = User.query.filter_by(email="darryl@gmail.test").one()
+    assert darryl.role == "admin"
+    darryl.set_password("darrylpass1")
+    db.session.commit()
+    r = s.post(f"/admin/users/{darryl.id}/email", data={"email": "Darryl@TriCleanSupply.test", "_csrf": token},
+               follow_redirects=True)
+    assert "darryl@tricleansupply.test" in r.get_data(as_text=True)
+    r = s.post(f"/admin/users/{darryl.id}/email", data={"email": "a@t.test", "_csrf": token}, follow_redirects=True)
+    assert "already has a login" in r.get_data(as_text=True)
+    c = app.test_client()
+    t = csrf(c)
+    r = c.post("/login", data={"email": "darryl@tricleansupply.test", "password": "darrylpass1", "_csrf": t})
+    assert r.headers["Location"].endswith("/admin/")
+    assert "Netherland" not in app.test_client().get("/").get_data(as_text=True)

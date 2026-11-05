@@ -194,3 +194,6 @@ td.low { background: var(--bad-soft); color: var(--bad); font-weight: 700; }
 .invoice-meta td, .invoice-totals td { text-align: right; padding: 5px 0; border: none; font-variant-numeric: tabular-nums; min-width: 110px; }
 .invoice-totals tr.balance th, .invoice-totals tr.balance td { border-top: 2px solid var(--navy); font-weight: 800; font-size: 1.05rem; padding-top: 8px; }
 .invoice-lines thead th { background: var(--navy); color: #fff; }
+
+details.inline-edit summary { cursor: pointer; color: var(--blue); list-style: none; display: inline-block; margin-top: 2px; }
+details.inline-edit summary::-webkit-details-marker { display: none; }
