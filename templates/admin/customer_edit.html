@@ -60,6 +60,7 @@
       <td class="right nowrap">
         <form method="post" action="{{ url_for('admin.user_reinvite', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small secondary">{{ 'New invite link' if not u.password_hash else 'Password reset link' }}</button></form>
         <form method="post" action="{{ url_for('admin.user_toggle', user_id=u.id) }}" class="inline">{{ csrf_field() }}<button class="small {{ 'secondary' if not u.active else 'danger' }}">{{ 'Reactivate' if not u.active else 'Deactivate' }}</button></form>
+        <form method="post" action="{{ url_for('admin.user_make_staff', user_id=u.id) }}" class="inline" onsubmit="return confirm('Make {{ u.email }} TriClean staff? They\'ll get full backend access and stop being a login for {{ customer.name|e }}.');">{{ csrf_field() }}<button class="small secondary">Make staff</button></form>
       </td></tr>{% endfor %}</tbody>
   </table></div>
   {% endif %}

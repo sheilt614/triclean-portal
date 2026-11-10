@@ -2,6 +2,13 @@
 {% block admin_title %}Staff logins{% endblock %}
 {% block admin %}
 <h1>Staff logins</h1>
+{% if convert %}
+<div class="card invite-box" id="convert">
+  <strong>{{ convert.email }} is currently a customer login{% if convert.customer %} for {{ convert.customer.name }}{% endif %}.</strong>
+  <p class="small" style="margin:4px 0 8px;">That's why they see the ordering portal instead of the backend. Make them staff to give them backend access instead. They keep the same email and password.</p>
+  <form method="post" action="{{ url_for('admin.user_make_staff', user_id=convert.id) }}" class="inline">{{ csrf_field() }}<button type="submit">Make {{ convert.name or convert.email }} staff</button></form>
+</div>
+{% endif %}
 <p class="muted">People here can see and change everything in the backend — prices, stock, orders. Adding someone gives you a one-time link to send them; they open it and choose their own password. "Change email" moves a login to a new address (e.g. a business email) and keeps their password.</p>
 <div class="table-wrap"><table>
   <thead><tr><th>Person</th><th>Status</th><th>Last login</th><th></th></tr></thead>

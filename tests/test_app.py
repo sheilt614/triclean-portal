@@ -480,3 +480,26 @@ def test_reset_link_box_shows_once(app, data):
     db.session.expire_all()
     assert link.endswith(User.query.filter_by(email="joe@t.test").one().invite_token)
     assert 'id="invite-link"' not in s.get("/admin/staff").get_data(as_text=True)  # gone after one view
+
+
+def test_customer_login_added_by_mistake_can_be_made_staff(app, data):
+    s = app.test_client()
+    token = login(s, "staff@t.test")
+    # Joe added on a customer's page by mistake: he gets the customer portal.
+    s.post(f"/admin/customers/{data['a'].id}/users", data={"name": "Joe", "email": "joe@t.test", "_csrf": token})
+    joe = User.query.filter_by(email="joe@t.test").one()
+    joe.set_password("password123")
+    db.session.commit()
+    j = app.test_client()
+    login(j, "joe@t.test")
+    assert j.get("/admin/").status_code == 403
+    # Adding him on Staff logins offers the conversion instead of a dead end.
+    page = s.post("/admin/staff", data={"email": "joe@t.test", "_csrf": token}).get_data(as_text=True)
+    assert "currently a customer login for Customer A" in page and "make-staff" in page
+    s.post(f"/admin/users/{joe.id}/make-staff", data={"_csrf": token})
+    db.session.expire_all()
+    joe = User.query.filter_by(email="joe@t.test").one()
+    assert joe.role == "admin" and joe.customer_id is None and joe.check_password("password123")
+    # His existing session now gets the backend, and the portal sends him there.
+    assert j.get("/admin/").status_code == 200
+    assert j.get("/portal/").headers["Location"].endswith("/admin/")

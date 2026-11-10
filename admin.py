@@ -315,6 +315,27 @@ def user_reinvite(user_id):
                      else url_for("admin.staff")) + "#invite")
 
 
+@bp.route("/users/<int:user_id>/make-staff", methods=["POST"])
+@admin_required
+def user_make_staff(user_id):
+    """Turns a customer login into a staff login — for someone who was added
+    on a customer's page by mistake. Keeps their email and password; they
+    see the backend instead of the ordering portal the next time they load
+    a page. Their past orders stay with the customer company."""
+    user = db.session.get(User, user_id) or abort(404)
+    if user.is_admin:
+        flash(f"{user.email} is already staff.")
+    else:
+        company = user.customer.name if user.customer else "their customer account"
+        user.role = "admin"
+        user.customer_id = None
+        user.active = True
+        db.session.commit()
+        flash(f"{user.email} is now staff (moved off {company}). They'll see the backend next time they "
+              f"load a page{'.' if user.password_hash else ' — they still need to set a password, use Reset link below.'}")
+    return redirect(url_for("admin.staff"))
+
+
 @bp.route("/users/<int:user_id>/toggle", methods=["POST"])
 @admin_required
 def user_toggle(user_id):
@@ -361,7 +382,13 @@ def staff():
         if not email or "@" not in email:
             flash("Enter a valid email.")
         elif User.query.filter_by(email=email).first():
-            flash(f"{email} already has a login.")
+            existing = User.query.filter_by(email=email).first()
+            if existing.is_admin:
+                flash(f"{email} is already staff.")
+            else:
+                # Most likely added on a customer's page by mistake; offer to convert it.
+                return render_template("admin/staff.html", convert=existing,
+                                       staff=User.query.filter_by(role="admin").order_by(User.email).all())
         else:
             user = User(email=email, name=request.form.get("name", "").strip() or None, role="admin")
             user.new_invite()
